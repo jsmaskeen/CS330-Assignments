@@ -3,8 +3,8 @@
 ---
 TODO:
 
-- [ ] (2 pts.) "uptime" command to print how long has the system been running
-- [ ] (3 pts.) pause <no. of seconds>
+- [x] (2 pts.) "uptime" command to print how long has the system been running
+- [x] (3 pts.) pause <no. of seconds>
 
     - You can put your code in user/pause.c. Look at some of the other programs in user/ (e.g., user/echo.c, user/grep.c, and user/rm.c) to see how command-line arguments are passed to a program.
     - Add your pause program to UPROGS in Makefile; once you've done that, make qemu will compile your program and you'll be able to run it from the xv6 shell.

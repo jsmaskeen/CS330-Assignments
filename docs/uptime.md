@@ -9,10 +9,12 @@ $$
 But to access the frequency, since it is in the kernel space, I will need to expose the frequency as a syscall.
 So i define `sys_clockfreq` in [ref](./../sysproc.c), then add a call number in [ref](./../syscall.h), add it in [ref](./../syscall.c), update [ref](./../usr/usys.S), add `clockfreq` in [ref](./../usr/user.h).
 
+Also I had to add the uptime.c file [ref](./../usr/uptime.c) to UPROGS in [ref](./../usr/Makefile).
+
 Now I have access to the fucntion `clockfreq()` which will tell me the clock frequecny in HZ.
 
 That is all for this command.
 
-![](./imgs/uptime_1.png)
+![](./media/uptime_1.png)
 
 
