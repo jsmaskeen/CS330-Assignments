@@ -1,7 +1,32 @@
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/h2nLSOuW)
 
 ---
+TODO:
 
+- [ ] (2 pts.) "uptime" command to print how long has the system been running
+- [ ] (3 pts.) pause <no. of seconds>
+
+    - You can put your code in user/pause.c. Look at some of the other programs in user/ (e.g., user/echo.c, user/grep.c, and user/rm.c) to see how command-line arguments are passed to a program.
+    - Add your pause program to UPROGS in Makefile; once you've done that, make qemu will compile your program and you'll be able to run it from the xv6 shell.
+    - If the user forgets to pass an argument, sleep should print an error message.
+    - The command-line argument is passed as a string; you can convert it to an integer using atoi (see user/ulib.c).
+    - Use the system call sleep to enforce this program.
+    - See kernel/sysproc.c for the xv6 kernel code that implements the sleep system call (look for sys_sleep), user/user.h for the C definition of sleep callable from a user program, and user/usys.S for the assembler code that jumps from user code into the kernel for sleep.
+    - pause's main should call exit(0) when it is done.
+
+- [ ] (3 pts.) modify the shell to support tab completion, i.e., pressing the tab key should try to complete the command if it is unique and list the possible commands if they are not unique as per the string matching upto the text provided by the user
+- [ ] (4 pts.) ps command that prints details of all processes running on the system
+
+    - You may have to implement various system calls as part of this command
+    - You should print the process-id, parent's process id, name of the process, state of the process, and an additional field which prints the number of system calls the process has invoked. 
+
+
+
+
+
+
+
+---
 
 # xv6-pi5 Documentation
 
