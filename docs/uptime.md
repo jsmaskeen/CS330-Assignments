@@ -13,4 +13,6 @@ Now I have access to the fucntion `clockfreq()` which will tell me the clock fre
 
 That is all for this command.
 
+![](./imgs/uptime_1.png)
+
 
