@@ -22,6 +22,7 @@ UPROGS=\
 	_usertests\
 	_wc\
 	_zombie\
+	_uptime\
 
 
 all: $(FS_IMAGE)

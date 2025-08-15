@@ -56,5 +56,10 @@
   "C_Cpp_Runner.showCompilationTime": false,
   "C_Cpp_Runner.useLinkTimeOptimization": false,
   "C_Cpp_Runner.msvcSecureNoWarnings": false,
-  "makefile.configureOnOpen": true
+  "makefile.configureOnOpen": true,
+  "files.associations": {
+    "user.h": "c",
+    "stat.h": "c",
+    "types.h": "c"
+  }
 }

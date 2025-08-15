@@ -94,3 +94,10 @@ int sys_uptime(void)
 
     return xticks;
 }
+
+
+// returns the clock frequency in HZ
+int sys_clockfreq(void)
+{
+    return HZ;   
+}
