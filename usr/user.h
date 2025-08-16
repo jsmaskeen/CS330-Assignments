@@ -23,6 +23,7 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int clockfreq(void);
+int uartputc (int c);
 
 // ulib.c
 int stat(char*, struct stat*);

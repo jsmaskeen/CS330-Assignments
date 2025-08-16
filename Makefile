@@ -2,6 +2,7 @@
 QEMU = qemu-system-arm
 
 include makefile.inc
+.DEFAULT_GOAL := run
 
 # link the libgcc.a for __aeabi_idiv. ARM has no native support for div
 LIBS = $(LIBGCC)
@@ -73,3 +74,10 @@ clean:
 	initcode initcode.out kernel xv6.img fs.img kernel.elf memfs
 	make -C tools clean
 	make -C usr clean
+
+.PHONY: run
+
+run:
+	$(MAKE) clean
+	$(MAKE) qemu
+	$(MAKE) clean

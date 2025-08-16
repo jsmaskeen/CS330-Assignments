@@ -101,3 +101,14 @@ int sys_clockfreq(void)
 {
     return HZ;   
 }
+
+
+int sys_uartputc (void){
+    int c;
+    if(argint(0, &c) < 0) {
+        return -1;
+    }
+
+    uartputc(c);
+    return 0;
+}

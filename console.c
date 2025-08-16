@@ -174,54 +174,6 @@ struct {
     uint e;  // Edit index
 } input;
 
-
-int
-complete(char *buf)
-{
-    // Simple command completion
-    char commands[][10] = {
-        "ls",
-        "ln",
-        "cat",
-        "echo",
-        "uptime",
-        "rm",
-        "mkdir"
-    };
-    // int possible[sizeof(commands)/sizeof(commands[0])] = {0};
-    uint n = strlen(buf);
-    int count = 0, index = -1;
-    for(int i = 0; i < sizeof(commands)/sizeof(commands[0]); i++){
-        if(strcom(buf, commands[i]) == n){
-            // strcpy(buf, commands[i]);
-            count++; index = i;
-            break;
-        }
-    }
-    if(count == 1)
-    {
-        int s = strlen(commands[index]);
-        for(int i =n; i<s; i++){
-            input.buf[input.e++] = commands[index][i];
-            consputc(commands[index][i]);
-        }
-    }
-    // else if(count > 1){
-    //     printf(2, "\n");
-    //     for(int i = 0; i < sizeof(commands)/sizeof(commands[0]); i++){
-    //         if(possible[i]){
-    //             printf(2, "%s\n", commands[i]);
-    //         }
-    //     }
-    // }
-    input.buf[input.e++] = ' ';
-    consputc(' ');
-    
-    return 0;
-}
-
-
-
 #define C(x)  ((x)-'@')  // Control-x
 void consoleintr (int (*getc) (void))
 {
@@ -258,11 +210,7 @@ void consoleintr (int (*getc) (void))
 
                 input.buf[input.e++ % INPUT_BUF] = c;
                 if(c != '\t') consputc(c);
-                else{
-                    input.buf[input.e-- - 1] = '\0';
-                    complete(input.buf + input.r);
-                }
-                if (c == '\n' || c == C('D') || input.e == input.r + INPUT_BUF) {
+                if (c == '\n' || c == '\t'|| c == C('D') || input.e == input.r + INPUT_BUF) {
                     input.w = input.e;
                     wakeup(&input.r);
                 }
