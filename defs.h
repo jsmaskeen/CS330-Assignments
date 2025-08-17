@@ -136,6 +136,12 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
+struct proc* 		get_process(int);
+int 						get_nsyscall(int);
+int 						get_proclist(int*);
+int 						get_parproc(int);
+int 						get_procname(int, char*);
+int 						get_procstate(int);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
