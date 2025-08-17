@@ -24,7 +24,7 @@ int sleep(int);
 int uptime(void);
 int clockfreq(void);
 int uartputc (int c);
-int* proclist(void);
+int proclist(int* buffer);
 int get_parproc(int pid);
 char* get_procname(int pid);
 enum procstate get_procstate(int pid);

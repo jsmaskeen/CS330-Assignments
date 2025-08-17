@@ -549,7 +549,7 @@ int get_nsyscall(int pid) {
     return get_process(pid)->nsyscalls;
 }
 
-int* get_proclist(int* buffer){
+int get_proclist(int* buffer){
 
     for (int i = 0; i < NPROC; i ++)
     {
@@ -561,5 +561,5 @@ int* get_proclist(int* buffer){
         }
     }
     
-    return buffer;
+    return 0;
 }
