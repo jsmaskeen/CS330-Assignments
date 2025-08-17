@@ -549,30 +549,32 @@ int get_nsyscall(int pid) {
     return get_process(pid)->nsyscalls;
 }
 
-int get_proclist(int* buffer) {
+int get_proclist(int* buffer){
 
     for (int i = 0; i < NPROC; i ++)
     {
        struct proc* current = &ptable.proc[i];
 
-       if (current->state == UNUSED) buffer[i] = -1;
+       if (current->state == UNUSED){
+            buffer[i] = -1; 
+        }
        else {
             buffer[i] = current->pid;
+            cprintf("kernel: %d\n", current->pid);
         }
-    }
-    
+    } 
     return 0;
 }
 
-int get_parproc(int pid) {
+int get_parpoc(int pid){
     return get_process(pid)->parent->pid;
 }
 
-int get_procname(int pid, char* buffer) {
-    safestrcpy(buffer, get_process(pid)->name, 16);
+int get_procname(int pid, char* buffer){
+    safestrcpy(buffer, get_process(pid)->name, NPROC);
     return 0;
 }
 
-int get_procstate(int pid) {
+int get_procstate(int pid){
     return get_process(pid)->state;
 }

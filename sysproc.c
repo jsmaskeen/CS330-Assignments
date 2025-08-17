@@ -117,8 +117,8 @@ int sys_uartputc (void){
 int sys_get_proclist(void) {
     char* buf;
 
-    if (argptr(0, &buf, 8) < 0)
+    if (argptr(0, &buf, 4) < 0)
         return -1;
-
+    cprintf("kernel buffer address: %p\n", buf);
     return get_proclist((int *)buf);
 }

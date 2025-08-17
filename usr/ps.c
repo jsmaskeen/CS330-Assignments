@@ -8,7 +8,7 @@ main(int argc, char **argv)
     // prints to the fd 1, i.e. stdout
 	int* buf = (int *) malloc(sizeof(int) * 64);
 	int status = proclist(buf);
-
+    printf(1, "user space address: %p", buf);
 	int i;
 
 	for (i = 0; i <  64; i++) {
