@@ -102,6 +102,9 @@ static struct proc* allocproc(void)
     // it use our implementation.
     p->context->lr = (uint)forkret+4;
 
+    // set the number of syscalls
+    p->nsyscalls = 0;
+
     return p;
 }
 
@@ -529,4 +532,18 @@ void procdump(void)
     show_callstk("procdump: \n");
 }
 
+struct proc* get_process(int pid) {
+    struct proc *p;
 
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->pid == pid) {
+            return p;
+        }
+    }
+
+    return 0; // return 0 if the process is not found
+}
+
+int get_nsyscall(int pid) {
+    return get_process(pid)->nsyscalls;
+}

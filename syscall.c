@@ -140,7 +140,7 @@ static int (*syscalls[])(void) = {
         [SYS_unlink]  sys_unlink,
         [SYS_link]    sys_link,
         [SYS_mkdir]   sys_mkdir,
-        [SYS_close]   sys_close,
+        [SYS_close]   sys_close
 };
 
 void syscall(void)
@@ -161,6 +161,8 @@ void syscall(void)
         if (num != SYS_exec) {
             proc->tf->r0 = ret;
         }
+
+        proc->nsyscalls++;
     } else {
         cprintf("%d %s: unknown sys call %d\n", proc->pid, proc->name, num);
         proc->tf->r0 = -1;

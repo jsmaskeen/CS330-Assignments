@@ -28,7 +28,7 @@ int* proclist(void);
 int get_parproc(int pid);
 char* get_procname(int pid);
 enum procstate get_procstate(int pid);
-int get_procsyscalls(int pid);
+int get_procnsyscalls(int pid);
 
 // ulib.c
 int stat(char*, struct stat*);

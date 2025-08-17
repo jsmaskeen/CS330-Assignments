@@ -22,3 +22,8 @@
 #define SYS_close  21
 #define SYS_clockfreq  22
 #define SYS_uartputc 23
+#define SYS_proclist 24
+#define SYS_get_parproc 25
+#define SYS_get_procname 26
+#define SYS_get_procstate 27
+#define SYS_get_procnsyscalls 28
