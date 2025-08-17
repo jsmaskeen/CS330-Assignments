@@ -137,6 +137,7 @@ void userinit(void)
     memset(p->tf, 0, sizeof(*p->tf));
 
     p->tf->r14_svc = (uint)error_init;
+
     p->tf->spsr = spsr_usr ();
     p->tf->sp_usr = PTE_SZ;	// set the user stack
     p->tf->lr_usr = 0;
@@ -546,4 +547,19 @@ struct proc* get_process(int pid) {
 
 int get_nsyscall(int pid) {
     return get_process(pid)->nsyscalls;
+}
+
+int* get_proclist(int* buffer){
+
+    for (int i = 0; i < NPROC; i ++)
+    {
+       struct proc* current = &ptable.proc[i];
+
+       if (current->state == UNUSED) buffer[i] = -1;
+       else {
+            buffer[i] = current->pid;
+        }
+    }
+    
+    return buffer;
 }
