@@ -26,7 +26,7 @@ int clockfreq(void);
 int uartputc (int c);
 int proclist(int* buffer);
 int get_parproc(int pid);
-char* get_procname(int pid);
+char* get_procname(int pid, char* buffer);
 enum procstate get_procstate(int pid);
 int get_procnsyscalls(int pid);
 

@@ -563,3 +563,17 @@ int get_proclist(int* buffer){
     
     return 0;
 }
+
+int get_parpoc(int pid){
+    return get_process(pid)->parent->pid;
+}
+
+int get_procname(int pid, char* buffer){
+    safestrcpy(buffer, get_process(pid)->name, 16);
+    return 0;
+}
+
+int get_procstate(int pid)
+{
+    return get_process(pid)->state;
+}
