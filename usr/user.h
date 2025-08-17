@@ -24,6 +24,11 @@ int sleep(int);
 int uptime(void);
 int clockfreq(void);
 int uartputc (int c);
+int* proclist(void);
+int get_parproc(int pid);
+char[] get_procname(int pid);
+procstate get_procstate(int pid);
+int get_procsyscalls(int pid);
 
 // ulib.c
 int stat(char*, struct stat*);
