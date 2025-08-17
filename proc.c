@@ -549,7 +549,7 @@ int get_nsyscall(int pid) {
     return get_process(pid)->nsyscalls;
 }
 
-int get_proclist(int* buffer){
+int get_proclist(int* buffer) {
 
     for (int i = 0; i < NPROC; i ++)
     {
@@ -564,16 +564,15 @@ int get_proclist(int* buffer){
     return 0;
 }
 
-int get_parpoc(int pid){
+int get_parproc(int pid) {
     return get_process(pid)->parent->pid;
 }
 
-int get_procname(int pid, char* buffer){
+int get_procname(int pid, char* buffer) {
     safestrcpy(buffer, get_process(pid)->name, 16);
     return 0;
 }
 
-int get_procstate(int pid)
-{
+int get_procstate(int pid) {
     return get_process(pid)->state;
 }

@@ -112,3 +112,13 @@ int sys_uartputc (void){
     uartputc(c);
     return 0;
 }
+
+
+int sys_get_proclist(void) {
+    char* buf;
+
+    if (argptr(0, &buf, 8) < 0)
+        return -1;
+
+    return get_proclist((int *)buf);
+}
