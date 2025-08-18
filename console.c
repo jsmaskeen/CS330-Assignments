@@ -16,26 +16,7 @@ static void consputc (int);
 
 void autocomplete(char *buf, uint *e);
 
-static const char *commands[] = {
-    "cat",
-    "echo",
-    "grep",
-    "init",
-    "kill",
-    "ln",
-    "ls",
-    "mkdir",
-    "pause",
-    "ps",
-    "rm",
-    "sh",
-    "stressfs",
-    "uptime",
-    "usertests",
-    "wc",
-    "zombie",
-    0 // denotes end of list
-};
+extern const char *commands[];
 
 
 static int panicked = 0;
@@ -204,7 +185,7 @@ autocomplete(char *buf, uint *e)
 {
     int i, j, len;
     char *current_word;
-    const char *matches[MAXPROGS];
+    const char *matches[MAXCOMMANDS];
     int match_count = 0;
 
     for (i = *e - 1; i >= 0 && buf[i % INPUT_BUF] != ' ' && buf[i % INPUT_BUF] != '\n'; i--);
