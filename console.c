@@ -14,6 +14,30 @@
 
 static void consputc (int);
 
+void autocomplete(char *buf, uint *e);
+
+static const char *commands[] = {
+    "cat",
+    "echo",
+    "grep",
+    "init",
+    "kill",
+    "ln",
+    "ls",
+    "mkdir",
+    "pause",
+    "ps",
+    "rm",
+    "sh",
+    "stressfs",
+    "uptime",
+    "usertests",
+    "wc",
+    "zombie",
+    0 // denotes end of list
+};
+
+
 static int panicked = 0;
 
 static struct {
@@ -174,6 +198,53 @@ struct {
     uint e;  // Edit index
 } input;
 
+
+void
+autocomplete(char *buf, uint *e)
+{
+    int i, j, len;
+    char *current_word;
+    const char *matches[MAXPROGS];
+    int match_count = 0;
+
+    for (i = *e - 1; i >= 0 && buf[i % INPUT_BUF] != ' ' && buf[i % INPUT_BUF] != '\n'; i--);
+    current_word = &buf[(i + 1) % INPUT_BUF];
+    len = *e - (i + 1);
+
+    if (len == 0) return; // nothing to complete
+
+    for (i = 0; commands[i]; i++) {
+        if (strncmp(commands[i], current_word, len) == 0) {
+            matches[match_count++] = commands[i];
+        }
+    }
+
+    if (match_count == 1) {
+        for (i = len; i < strlen(matches[0]); i++) {
+            buf[(*e)++ % INPUT_BUF] = matches[0][i];
+            consputc(matches[0][i]);
+        }
+    }
+    else if (match_count > 1) {
+        consputc('\n');
+        for (i = 0; i < match_count; i++) {
+            for (j = 0; j < strlen(matches[i]); j++) {
+                consputc(matches[i][j]);
+            }
+            consputc(' ');
+        }
+        consputc('\n');
+
+        consputc('$');
+        consputc(' ');
+        for (i = 0; i < len; i++) {
+            consputc(current_word[i]);
+        }
+    }
+}
+
+
+
 #define C(x)  ((x)-'@')  // Control-x
 void consoleintr (int (*getc) (void))
 {
@@ -202,6 +273,10 @@ void consoleintr (int (*getc) (void))
                 consputc(BACKSPACE);
             }
 
+            break;
+
+        case '\t': // Tab key pressed
+            autocomplete(input.buf, &input.e);
             break;
 
         default:
