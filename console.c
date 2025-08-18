@@ -209,13 +209,12 @@ void consoleintr (int (*getc) (void))
                 c = (c == '\r') ? '\n' : c;
 
                 input.buf[input.e++ % INPUT_BUF] = c;
-                if(c != '\t') consputc(c);
-                if (c == '\n' || c == '\t'|| c == C('D') || input.e == input.r + INPUT_BUF) {
+                consputc(c);
+                if (c == '\n' ||  c == C('D') || input.e == input.r + INPUT_BUF) {
                     input.w = input.e;
                     wakeup(&input.r);
                 }
             }
-
             break;
         }
     }
@@ -299,4 +298,3 @@ void consoleinit (void)
 
     cons.locking = 1;
 }
-

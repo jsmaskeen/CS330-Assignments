@@ -142,51 +142,6 @@ getcmd(char *buf, int nbuf)
     return 0;
 }
 
-
-// int
-// complete(char *buf)
-// {
-//     // Simple command completion
-//     char commands[][10] = {
-//         "ls",
-//         "ln",
-//         "cat",
-//         "echo",
-//         "uptime",
-//         "rm",
-//         "mkdir"
-//     };
-//     // int possible[sizeof(commands)/sizeof(commands[0])] = {0};
-//     uint n = strlen(buf);
-//     int count = 0, index = -1;
-//     for(int i = 0; i < sizeof(commands)/sizeof(commands[0]); i++){
-//         if(strcom(buf, commands[i]) == n){
-//             // strcpy(buf, commands[i]);
-//             count++; index = i;
-//             break;
-//         }
-//     }
-//     if(count == 1)
-//     {
-//         int s = strlen(commands[index]);
-//         for(int i =n; i<s; i++){
-//             input.buf[input.e++] = commands[index][i];
-//             consputc(commands[index][i]);
-//         }
-//     }
-//     // else if(count > 1){
-//     //     printf(2, "\n");
-//     //     for(int i = 0; i < sizeof(commands)/sizeof(commands[0]); i++){
-//     //         if(possible[i]){
-//     //             printf(2, "%s\n", commands[i]);
-//     //         }
-//     //     }
-//     // }
-    
-//     return 0;
-// }
-
-
 int
 main(void)
 {
@@ -210,34 +165,6 @@ main(void)
             if(chdir(buf+3) < 0)
                 printf(2, "cannot cd %s\n", buf+3);
             continue;
-        }
-        // int tab_detected = 0;
-
-        if (buf[strlen(buf)-1] == '\t'){
-            // tab_detected = 1;
-            // printf(1, "\n\nhihiihihih\n\n");
-            if (buf[0] == 'l'){
-                buf[strlen(buf)] = 0; // remove null
-                buf[strlen(buf)-1] = 's'; // remove tab
-                char *ss = "s";
-                write(2, ss, strlen(ss));
-                // uartputc('s');
-                
-                int i, cc;
-                char c;
-                
-                for(i=strlen(buf); i+1 < sizeof(buf); ){
-                    cc = read(0, &c, 1);
-                    if(cc < 1)
-                        break;
-                    buf[i++] = c;
-                    if(c == '\n' || c == '\r')
-                        break;
-                }
-                buf[i] = '\0';
-
-            }
-            
         }
 
         if(fork1() == 0)
