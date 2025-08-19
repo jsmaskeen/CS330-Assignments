@@ -550,17 +550,15 @@ int get_nsyscall(int pid) {
 }
 
 int get_proclist(int* buffer){
-
     for (int i = 0; i < NPROC; i ++)
     {
        struct proc* current = &ptable.proc[i];
 
        if (current->state == UNUSED){
-            buffer[i] = -1; 
+            *(buffer + i) = -1; 
         }
        else {
-            buffer[i] = current->pid;
-            cprintf("kernel: %d\n", current->pid);
+            *(buffer + i) = current->pid;
         }
     } 
     return 0;
