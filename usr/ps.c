@@ -5,17 +5,34 @@
 int
 main(int argc, char **argv)
 {
-    // prints to the fd 1, i.e. stdout
+	static char *states[] = {
+		[0] = "unused",
+		[1] = "embryo",
+		[2] = "sleep ",
+		[3] = "runble",
+		[4] = "run   ",
+		[5] = "zombie"
+	};
+
 	int* buf = (int *) malloc(sizeof(int) * 64);
-	// *buf = 10;
-	int status = proclist(buf);
+	proclist(buf);
 	int i;
 
-	for (i = 0; i < 64; i++) {
-		printf(1, "%d\n", buf[i]);
-	}
+	printf(1, "Process ID\tParent PID\tProcess Name\tState\tNumber of System Calls\n");
 
-	printf(1, "Status: %d", status);
-    
+	for (i = 0; i < 64; i++) {
+		if (buf[i] == -1)
+			continue;
+		char proc_name[16];
+		get_procname(buf[i], proc_name);
+		printf(1, "%d\t\t%d\t\t%s\t\t%s\t%d\n",
+			buf[i],
+			get_parproc(buf[i]),
+			proc_name,
+			states[get_procstate(buf[i])],
+			get_procnsyscalls(buf[i]));
+	}
+	free(buf);
+
 	exit();
 }

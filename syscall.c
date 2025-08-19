@@ -117,6 +117,10 @@ extern int sys_uptime(void);
 extern int sys_clockfreq(void);
 extern int sys_uartputc (void);
 extern int sys_get_proclist(void);
+extern int sys_get_parproc(void);
+extern int sys_get_procname(void);
+extern int sys_get_procstate(void);
+extern int sys_get_procnsyscalls(void);
 
 static int (*syscalls[])(void) = {
         [SYS_fork]              sys_fork,
@@ -142,11 +146,11 @@ static int (*syscalls[])(void) = {
         [SYS_link]              sys_link,
         [SYS_mkdir]             sys_mkdir,
         [SYS_close]             sys_close,
-        [SYS_proclist]          sys_get_proclist
-        // [SYS_get_parproc]
-        // [SYS_get_procname]
-        // [SYS_get_procstate]
-        // [SYS_get_procnsyscalls]
+        [SYS_proclist]          sys_get_proclist,
+        [SYS_get_parproc]       sys_get_parproc,
+        [SYS_get_procname]      sys_get_procname,
+        [SYS_get_procstate]     sys_get_procstate,
+        [SYS_get_procnsyscalls] sys_get_procnsyscalls
 };
 
 void syscall(void)

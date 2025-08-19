@@ -123,3 +123,48 @@ int sys_get_proclist(void) {
 
     return get_proclist((int *)buf);
 }
+
+int sys_get_parproc(void) {
+    int pid;
+
+    if (argint(0, &pid) < 0) {
+        return -1;
+    }
+
+    return get_parproc(pid);
+}
+
+int sys_get_procname(void) {
+    int pid;
+    char* buf;
+
+    if (argint(0, &pid) < 0) {
+        return -1;
+    }
+
+    if (argptr(1, &buf, 8) < 0) {
+        return -1;
+    }
+
+    return get_procname(pid, buf);
+}
+
+int sys_get_procstate(void) {
+    int pid;
+
+    if (argint(0, &pid) < 0) {
+        return -1;
+    }
+
+    return get_procstate(pid);
+}
+
+int sys_get_procnsyscalls(void) {
+    int pid;
+
+    if (argint(0, &pid) < 0) {
+        return -1;
+    }
+
+    return get_nsyscall(pid);
+}

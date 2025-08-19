@@ -564,7 +564,7 @@ int get_proclist(int* buffer){
     return 0;
 }
 
-int get_parpoc(int pid){
+int get_parproc(int pid){
     return get_process(pid)->parent->pid;
 }
 

@@ -1,5 +1,4 @@
 struct stat;
-enum procstate;
 // system calls
 int fork(void);
 int exit(void) __attribute__((noreturn));
@@ -26,8 +25,8 @@ int clockfreq(void);
 int uartputc (int c);
 int proclist(int* buffer);
 int get_parproc(int pid);
-char* get_procname(int pid, char* buffer);
-enum procstate get_procstate(int pid);
+int get_procname(int pid, char* buffer);
+int get_procstate(int pid);
 int get_procnsyscalls(int pid);
 
 // ulib.c
