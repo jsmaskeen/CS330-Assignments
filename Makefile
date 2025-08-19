@@ -10,7 +10,6 @@ LIBS = $(LIBGCC)
 OBJS = \
 	lib/string.o \
 	\
-	autocmds.o\
 	arm.o\
 	asm.o\
 	bio.o\
@@ -54,15 +53,6 @@ qemu: kernel.elf
 	@echo "Press Ctrl-A and then X to terminate QEMU session\n"
 	$(QEMU) -M versatilepb -m 128 -cpu arm1176  -nographic -kernel kernel.elf
 
-build/autocmds.c: usr/Makefile
-	@echo "Generating command list with awk..."
-	@echo "const char *commands[] = {" >> build/autocmds.c
-	@awk '/^UPROGS=/{p=1;next}/^$$/{p=0}p' usr/Makefile | \
-		sed -e 's/\\//g' | grep -o '_[^ ]*' | sed 's/_/"/' | \
-		awk '{print $$0 "\","}' >> build/autocmds.c
-	@echo "0};" >> build/autocmds.c
-
-build/autocmds.o: build/autocmds.c
 
 INITCODE_OBJ = initcode.o
 $(addprefix build/,$(INITCODE_OBJ)): initcode.S

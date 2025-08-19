@@ -16,8 +16,6 @@ static void consputc (int);
 
 void autocomplete(char *buf, uint *e);
 
-extern const char *commands[];
-
 
 static int panicked = 0;
 
@@ -183,44 +181,57 @@ struct {
 void
 autocomplete(char *buf, uint *e)
 {
-    int i, j, len;
+    int i, len, offset;
     char *current_word;
-    const char *matches[MAXCOMMANDS];
+    char single_match[DIRSIZ + 1];
     int match_count = 0;
+    struct inode *dp;
+    struct dirent de;
 
     for (i = *e - 1; i >= 0 && buf[i % INPUT_BUF] != ' ' && buf[i % INPUT_BUF] != '\n'; i--);
     current_word = &buf[(i + 1) % INPUT_BUF];
     len = *e - (i + 1);
 
-    if (len == 0) return; // nothing to complete
+    if (len == 0) return; // Nothing to complete
 
-    for (i = 0; commands[i]; i++) {
-        if (strncmp(commands[i], current_word, len) == 0) {
-            matches[match_count++] = commands[i];
+    if((dp = namei("/")) == 0) return; 
+    ilock(dp);
+
+    for(offset = 0; offset < dp->size; offset += sizeof(de)){
+        if(readi(dp, (char*)&de, offset, sizeof(de)) != sizeof(de)) continue;
+        if(de.inum == 0 || de.name[0] == '.') continue; 
+
+        if(strncmp(de.name, current_word, len) == 0){
+            match_count++;
+            if(match_count == 1)
+                safestrcpy(single_match, de.name, sizeof(single_match));
         }
     }
+
+    iunlockput(dp);
 
     if (match_count == 1) {
-        for (i = len; i < strlen(matches[0]); i++) {
-            buf[(*e)++ % INPUT_BUF] = matches[0][i];
-            consputc(matches[0][i]);
+        for (i = len; i < strlen(single_match); i++) {
+            buf[(*e)++ % INPUT_BUF] = single_match[i];
+            consputc(single_match[i]);
         }
-    }
-    else if (match_count > 1) {
+    } else if (match_count > 1) {
         consputc('\n');
-        for (i = 0; i < match_count; i++) {
-            for (j = 0; j < strlen(matches[i]); j++) {
-                consputc(matches[i][j]);
-            }
-            consputc(' ');
-        }
-        consputc('\n');
+        if((dp = namei("/")) == 0) return;
+        ilock(dp);
 
-        consputc('$');
-        consputc(' ');
-        for (i = 0; i < len; i++) {
-            consputc(current_word[i]);
+        for(offset = 0; offset < dp->size; offset += sizeof(de)){
+            if(readi(dp, (char*)&de, offset, sizeof(de)) != sizeof(de)) continue;
+            if(de.inum == 0 || de.name[0] == '.') continue;
+
+            if(strncmp(de.name, current_word, len) == 0){
+                cprintf("%s ", de.name);
+            }
         }
+
+        iunlockput(dp);
+        cprintf("\n$ ");
+        for(i = 0; i < len; i++) consputc(current_word[i]);
     }
 }
 
