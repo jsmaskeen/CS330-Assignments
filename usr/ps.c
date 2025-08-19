@@ -18,19 +18,22 @@ main(int argc, char **argv)
 	proclist(buf);
 	int i;
 
-	printf(1, "Process ID\tParent PID\tProcess Name\tState\tNumber of System Calls\n");
+    printf(1, "+-----+------------+------+-------+------------------+\n");
+    printf(1, "| PID | Parent PID | Name | State | No. of Sys Calls |\n");
+    printf(1, "+-----+------------+------+-------+------------------+\n");
 
 	for (i = 0; i < 64; i++) {
 		if (buf[i] == -1)
 			continue;
 		char proc_name[16];
+        int parent = get_parproc(buf[i]);
 		get_procname(buf[i], proc_name);
-		printf(1, "%d\t\t%d\t\t%s\t\t%s\t%d\n",
-			buf[i],
-			get_parproc(buf[i]),
-			proc_name,
-			states[get_procstate(buf[i])],
-			get_procnsyscalls(buf[i]));
+		printf(1, "| %d | %d | %s | %s | %d |\n",
+                  buf[i],
+                  parent > -1 ? parent : -1,
+                  proc_name,
+                  states[get_procstate(buf[i])],
+                  get_procnsyscalls(buf[i]));
 	}
 	free(buf);
 
