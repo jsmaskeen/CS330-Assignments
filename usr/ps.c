@@ -37,5 +37,5 @@ main(int argc, char **argv)
 	}
 	free(buf);
 
-	exit();
+	exit(0);
 }
