@@ -223,7 +223,7 @@ int fork(void)
 // Exit the current process.  Does not return.
 // An exited process remains in the zombie state
 // until its parent calls wait() to find out it exited.
-void exit(void)
+void exit(int exit_code)
 {
     struct proc *p;
     int fd;

@@ -13,8 +13,14 @@ int sys_fork(void)
 
 int sys_exit(void)
 {
-    exit();
-    return 0;  // not reached
+    int exit_id;
+    
+    if (argint(0, &exit_id) < 0){
+        return -1;
+    }
+
+    exit(exit_id);
+    return 0;
 }
 
 int sys_wait(void)

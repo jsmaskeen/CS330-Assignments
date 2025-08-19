@@ -10,5 +10,5 @@ main(int argc, char **argv)
     int hz = clockfreq();
     printf(1, "System uptime is: %d ticks (%d s)\n", i, i/hz);
     
-    exit();
+    exit(0);
 }
