@@ -14,7 +14,7 @@ TODO:
     - See kernel/sysproc.c for the xv6 kernel code that implements the sleep system call (look for sys_sleep), user/user.h for the C definition of sleep callable from a user program, and user/usys.S for the assembler code that jumps from user code into the kernel for sleep.
     - pause's main should call exit(0) when it is done.
 
-- [ ] (3 pts.) modify the shell to support tab completion, i.e., pressing the tab key should try to complete the command if it is unique and list the possible commands if they are not unique as per the string matching upto the text provided by the user
+- [x] (3 pts.) modify the shell to support tab completion, i.e., pressing the tab key should try to complete the command if it is unique and list the possible commands if they are not unique as per the string matching upto the text provided by the user
 - [ ] (4 pts.) ps command that prints details of all processes running on the system
 
     - You may have to implement various system calls as part of this command
