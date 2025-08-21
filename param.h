@@ -13,7 +13,6 @@
 #define ROOTDEV       1  // device number of file system root disk
 #define MAXARG       32  // max exec arguments
 #define LOGSIZE      10  // max data sectors in on-disk log
-#define MAXCOMMANDS  50 // maximum number of auto complete display
 #define HZ           10
 
 #define N_CALLSTK    15

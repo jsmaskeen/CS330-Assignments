@@ -14,8 +14,6 @@
 
 static void consputc (int);
 
-void autocomplete(char *buf, uint *e);
-
 
 static int panicked = 0;
 
@@ -178,114 +176,30 @@ struct {
 } input;
 
 
-void
-autocomplete(char *buf, uint *e)
-{
-    int i, len, offset;
-    char *current_word;
-    char single_match[DIRSIZ + 1];
-    int match_count = 0;
-    struct inode *dp;
-    struct dirent de;
-
-    for (i = *e - 1; i >= 0 && buf[i % INPUT_BUF] != ' ' && buf[i % INPUT_BUF] != '\n'; i--);
-    current_word = &buf[(i + 1) % INPUT_BUF];
-    len = *e - (i + 1);
-
-    if (len == 0) return; // Nothing to complete
-
-    if((dp = namei("/")) == 0) return; 
-    ilock(dp);
-
-    for(offset = 0; offset < dp->size; offset += sizeof(de)){
-        if(readi(dp, (char*)&de, offset, sizeof(de)) != sizeof(de)) continue;
-        if(de.inum == 0 || de.name[0] == '.') continue; 
-
-        if(strncmp(de.name, current_word, len) == 0){
-            match_count++;
-            if(match_count == 1)
-                safestrcpy(single_match, de.name, sizeof(single_match));
-        }
-    }
-
-    iunlockput(dp);
-
-    if (match_count == 1) {
-        for (i = len; i < strlen(single_match); i++) {
-            buf[(*e)++ % INPUT_BUF] = single_match[i];
-            consputc(single_match[i]);
-        }
-    } else if (match_count > 1) {
-        consputc('\n');
-        if((dp = namei("/")) == 0) return;
-        ilock(dp);
-
-        for(offset = 0; offset < dp->size; offset += sizeof(de)){
-            if(readi(dp, (char*)&de, offset, sizeof(de)) != sizeof(de)) continue;
-            if(de.inum == 0 || de.name[0] == '.') continue;
-
-            if(strncmp(de.name, current_word, len) == 0){
-                cprintf("%s ", de.name);
-            }
-        }
-
-        iunlockput(dp);
-        cprintf("\n$ ");
-        for(i = 0; i < len; i++) consputc(current_word[i]);
-    }
-}
-
-
 
 #define C(x)  ((x)-'@')  // Control-x
-void consoleintr (int (*getc) (void))
+void consoleintr(int (*getc) (void))
 {
     int c;
 
     acquire(&input.lock);
-
     while ((c = getc()) >= 0) {
         switch (c) {
         case C('P'):  // Process listing.
             procdump();
             break;
 
-        case C('U'):  // Kill line.
-            while ((input.e != input.w) && (input.buf[(input.e - 1) % INPUT_BUF] != '\n')) {
-                input.e--;
-                consputc(BACKSPACE);
-            }
-
-            break;
-
-        case C('H'):
-        case '\x7f':  // Backspace
-            if (input.e != input.w) {
-                input.e--;
-                consputc(BACKSPACE);
-            }
-
-            break;
-
-        case '\t': // Tab key pressed
-            autocomplete(input.buf, &input.e);
-            break;
-
         default:
-            if ((c != 0) && (input.e - input.r < INPUT_BUF)) {
-                c = (c == '\r') ? '\n' : c;
-
+            if (c != 0 && input.e - input.r < INPUT_BUF) {
                 input.buf[input.e++ % INPUT_BUF] = c;
-                consputc(c);
-                if (c == '\n' ||  c == C('D') || input.e == input.r + INPUT_BUF) {
-                    input.w = input.e;
-                    wakeup(&input.r);
-                }
+                
+                // Wake up the waiting process (the shell) on every character.
+                input.w = input.e;
+                wakeup(&input.r);
             }
             break;
         }
     }
-
     release(&input.lock);
 }
 

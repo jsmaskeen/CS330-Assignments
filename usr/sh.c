@@ -3,6 +3,7 @@
 #include "types.h"
 #include "user.h"
 #include "fcntl.h"
+#include "fs.h"
 
 // Parsed command representation
 #define EXEC  1
@@ -10,9 +11,10 @@
 #define PIPE  3
 #define LIST  4
 #define BACK  5
+#define C(x)  ((x)-'@')
 
 #define MAXARGS 10
-
+#define MAXCOMMANDS 64
 struct cmd {
     int type;
 };
@@ -131,15 +133,112 @@ runcmd(struct cmd *cmd)
     exit(0);
 }
 
+int strncmp(const char *p, const char *q, uint n)
+{
+    while(n > 0 && *p && *p == *q)
+        n--, p++, q++;
+    if(n == 0)
+        return 0;
+    return (uchar)*p - (uchar)*q;
+}
+
+void autocomplete(char *buf, int *pos) {
+    char *current_word_start = buf;
+    int i;
+    for (i = *pos - 1; i >= 0; i--) {
+        if (buf[i] == ' ') {
+            current_word_start = &buf[i + 1];
+            break;
+        }
+    }
+
+    int len = *pos - (current_word_start - buf);
+    if (len == 0) return; // Nothing to complete
+
+    int fd;
+    if ((fd = open(".", 0)) < 0) {
+        printf(2, "cannot open current directory\n");
+        return;
+    }
+
+    struct dirent de;
+    char matches[MAXCOMMANDS][DIRSIZ + 1];
+    int match_count = 0;
+
+    while (read(fd, &de, sizeof(de)) == sizeof(de) && match_count < MAXCOMMANDS) {
+        if (de.inum == 0) continue;
+        if (strncmp(de.name, current_word_start, len) == 0) {
+            strncpy(matches[match_count], de.name, DIRSIZ);
+            matches[match_count][DIRSIZ] = '\0';
+            match_count++;
+        }
+    }
+    close(fd);
+
+    if (match_count == 1) {
+        char* match = matches[0];
+        for (i = len; i < strlen(match); i++) {
+            if (*pos < 99) { // Prevent buffer overflow
+                buf[(*pos)++] = match[i];
+                write(1, &match[i], 1);
+            }
+        }
+    } else if (match_count > 1) {
+        printf(1, "\n");
+        for (i = 0; i < match_count; i++) {
+            printf(1, "%s ", matches[i]);
+        }
+        printf(1, "\n$ %s", buf);
+    }
+}
+
 int
 getcmd(char *buf, int nbuf)
 {
-    printf(2, "$ ");
-    memset(buf, 0, nbuf);
-    gets(buf, nbuf);
-    if(buf[0] == 0) // EOF
-        return -1;
-    return 0;
+  printf(2, "$ ");
+  memset(buf, 0, nbuf);
+  int i = 0;
+  char c;
+
+  while(i < nbuf - 1){
+    if(read(0, &c, 1) < 1)
+      return -1; // EOF
+
+    switch(c){
+      case '\n':
+      case '\r':
+        buf[i] = '\0';
+        write(1, "\n", 1);
+        return 0;
+
+      case '\t':
+        buf[i] = '\0';
+        autocomplete(buf, &i);
+        break;
+
+      case C('U'): // Kill line
+        while(i > 0){
+          i--;
+          write(1, "\b \b", 3); // Erase character on screen
+        }
+        break;
+      
+      case C('H'): // Backspace
+      case 127:    // DEL key
+        if(i > 0){
+          i--;
+          write(1, "\b \b", 3);
+        }
+        break;
+
+      default:
+        buf[i++] = c;
+        write(1, &c, 1);
+        break;
+    }
+  }
+  buf[i] = '\0';
+  return 0;
 }
 
 int
