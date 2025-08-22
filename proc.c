@@ -132,6 +132,8 @@ void userinit(void)
     inituvm(p->pgdir, _binary_initcode_start, (int)_binary_initcode_size);
 
     p->sz = PTE_SZ;
+    // set the number of syscalls
+    p->nsyscalls = 0;
 
     // craft the trapframe as if
     memset(p->tf, 0, sizeof(*p->tf));
@@ -201,7 +203,8 @@ int fork(void)
     np->sz = proc->sz;
     np->parent = proc;
     *np->tf = *proc->tf;
-
+    // set the number of syscalls
+    np->nsyscalls = 0;
     // Clear r0 so that fork returns 0 in the child.
     np->tf->r0 = 0;
 
@@ -294,6 +297,7 @@ int wait(void)
                 freevm(p->pgdir);
                 p->state = UNUSED;
                 p->pid = 0;
+                p->nsyscalls = 0;
                 p->parent = 0;
                 p->name[0] = 0;
                 p->killed = 0;
