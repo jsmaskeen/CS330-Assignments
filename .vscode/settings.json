@@ -65,6 +65,8 @@
     "memlayout.h": "c",
     "spinlock.h": "c",
     "param.h": "c",
-    "defs.h": "c"
+    "defs.h": "c",
+    "arm.h": "c",
+    "proc.h": "c"
   }
 }
