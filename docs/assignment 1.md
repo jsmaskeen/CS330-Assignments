@@ -7,7 +7,7 @@ Authors:
 - Karan Sagar Gandhi
 
 ## Uptime
-To implement the `uptime` command, we used the syscall for uptime. It returns the time in ticks [ref](./../sysproc.c), which reads the `tickslock`. This is initialized in `timer_init` [ref](./../device/timer.c), where a frequency is required. The frequency is defined in [ref](./../param.h) as `HZ`.  
+To implement the `uptime` command, we used the syscall for uptime. It returns the time in ticks [ref](https://github.com/IITGN-Operating-Systems/programming-assignment-1-child-killers/blob/main/sysproc.c), which reads the `tickslock`. This is initialized in `timer_init` [ref](https://github.com/IITGN-Operating-Systems/programming-assignment-1-child-killers/blob/main/device/timer.c), where a frequency is required. The frequency is defined in [ref](https://github.com/IITGN-Operating-Systems/programming-assignment-1-child-killers/blob/main/param.h) as `HZ`.  
 
 We can return the uptime in seconds by doing:  
 
@@ -17,13 +17,13 @@ $$
 
 
 Since the frequency is in kernel space, we exposed it to user space by creating a new syscall:  
-- Defined `sys_clockfreq` in [ref](./../sysproc.c).  
-- Added a call number in [ref](./../syscall.h).  
-- Registered it in [ref](./../syscall.c).  
-- Updated [ref](./../usr/usys.S).  
-- Added the user function `clockfreq` in [ref](./../usr/user.h).  
+- Defined `sys_clockfreq` in [ref](https://github.com/IITGN-Operating-Systems/programming-assignment-1-child-killers/blob/main/sysproc.c).  
+- Added a call number in [ref](https://github.com/IITGN-Operating-Systems/programming-assignment-1-child-killers/blob/main/syscall.h).  
+- Registered it in [ref](https://github.com/IITGN-Operating-Systems/programming-assignment-1-child-killers/blob/main/syscall.c).  
+- Updated [ref](https://github.com/IITGN-Operating-Systems/programming-assignment-1-child-killers/blob/main/usr/usys.S).  
+- Added the user function `clockfreq` in [ref](https://github.com/IITGN-Operating-Systems/programming-assignment-1-child-killers/blob/main/usr/user.h).  
 
-We also added the new `uptime.c` file [ref](./../usr/uptime.c) to `UPROGS` in [ref](./../usr/Makefile).  
+We also added the new `uptime.c` file [ref](https://github.com/IITGN-Operating-Systems/programming-assignment-1-child-killers/blob/main/usr/uptime.c) to `UPROGS` in [ref](https://github.com/IITGN-Operating-Systems/programming-assignment-1-child-killers/blob/main/usr/Makefile).  
 
 Now we can use the function `clockfreq()` to get the clock frequency in HZ and display uptime in seconds.  
 
@@ -32,7 +32,7 @@ Below is the output of the command:
 ![](./media/uptime_1.png)
 
 ## Pause
-We added a new `pause.c` file [ref](./../usr/pause.c) and wrote the functionality for the pause command. We also updated [ref](./../usr/Makefile) to include it in `UPROGS`.
+We added a new `pause.c` file [ref](https://github.com/IITGN-Operating-Systems/programming-assignment-1-child-killers/blob/main/usr/pause.c) and wrote the functionality for the pause command. We also updated [ref](https://github.com/IITGN-Operating-Systems/programming-assignment-1-child-killers/blob/main/usr/Makefile) to include it in `UPROGS`.
 
 In our implementation, we first read the command-line argument and convert it to an integer using `atoi`.  
 - If no argument is given, or if the number is negative, we print an error message to `stderr`.  
@@ -54,10 +54,10 @@ We first tried autocomplete by making a new function ```complete```, which ran i
 Next, we considered moving autocomplete to the user space by treating the tab character similar to how we treated the enter key. This however, meant that pressing tab would "commit" our current input and the backspace key would not work. 
 
 Then we were able to make it work using the following way:
-The commands are commands which are defined in the Makefile inside usr [ref](./../usr/Makefile)
+The commands are commands which are defined in the Makefile inside usr [ref](https://github.com/IITGN-Operating-Systems/programming-assignment-1-child-killers/blob/main/usr/Makefile)
 So, inside usr directory, we will have `_.*` as the command name. We will consider only those as commands for autocomplete.
 
-So, we edit the main Makefile [ref](./../Makefile), to automatically generate a C source file, at `build/autocmds.c` everytime we comiple the OS.
+So, we edit the main Makefile [ref](https://github.com/IITGN-Operating-Systems/programming-assignment-1-child-killers/blob/main/Makefile), to automatically generate a C source file, at `build/autocmds.c` everytime we comiple the OS.
 We basically read the Makefile in usr dir, and extract out the list of commands starting with `_`.
 
 This is how the resultant file looks like:
@@ -71,11 +71,11 @@ const char *commands[] = {
 };
 ```
 
-It ends with 0, so that `console.c` [ref](./../console.c) knows when the commands array ends. In commands.c there is `extern const char *commands[];` which will tell the linker to find the array.
+It ends with 0, so that `console.c` [ref](https://github.com/IITGN-Operating-Systems/programming-assignment-1-child-killers/blob/main/console.c) knows when the commands array ends. In commands.c there is `extern const char *commands[];` which will tell the linker to find the array.
 
-So the autocomplete logic was in the console.c file, [ref](./../console.c), there, `\t` triggers the console interrupt handler, then finds the word typed from the buffer, compares with the commands array, and if its unique, autocompletes otherwise it prints the list of commands and in the new line writes till what user had currently written.
+So the autocomplete logic was in the console.c file, [ref](https://github.com/IITGN-Operating-Systems/programming-assignment-1-child-killers/blob/main/console.c), there, `\t` triggers the console interrupt handler, then finds the word typed from the buffer, compares with the commands array, and if its unique, autocompletes otherwise it prints the list of commands and in the new line writes till what user had currently written.
 
-But then we thought that `console.c` should be kept dumb and tab completion should ideally be handled by the `sh.c` (the shell). Hence we moved the autocompelte fucniton yet again to the user space [ref](./../usr/sh.c), but also ratehr than detecting tab in `console.c`, we wake up on all key presses, and let `sh.c` handle what to do with the input characters. In this way we are able to implement the tab completion.
+But then we thought that `console.c` should be kept dumb and tab completion should ideally be handled by the `sh.c` (the shell). Hence we moved the autocompelte fucniton yet again to the user space [ref](https://github.com/IITGN-Operating-Systems/programming-assignment-1-child-killers/blob/main/usr/sh.c), but also ratehr than detecting tab in `console.c`, we wake up on all key presses, and let `sh.c` handle what to do with the input characters. In this way we are able to implement the tab completion.
 
 PS: backspaces work!!!
 
