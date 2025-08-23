@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Docs Viewer</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: #e0e0e0;
+    }
+    nav {
+      background: #1f1f1f;
+      padding: 10px 20px;
+      display: flex;
+      gap: 15px;
+      border-bottom: 1px solid #333;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    nav a {
+      color: #90caf9;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    nav a:hover {
+      color: #ffffff;
+    }
+    #content {
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+    pre {
+      background: #1e1e1e;
+      padding: 10px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+    code {
+      color: #ffb74d;
+    }
+  </style>
+</head>
+<body>
+  <nav id="navbar"></nav>
+  <div id="content">Loading...</div>
+
+  <script>
+    const files = [
+      "assignment 1.md"
+    ];
+
+    const navbar = document.getElementById("navbar");
+    const content = document.getElementById("content");
+
+    files.forEach(file => {
+      const link = document.createElement("a");
+      link.href = "#";
+      link.textContent = file.replace(".md", "");
+      link.onclick = () => loadFile(file);
+      navbar.appendChild(link);
+    });
+
+    async function loadFile(file) {
+      content.innerHTML = "Loading...";
+      try {
+        const res = await fetch(file);
+        const text = await res.text();
+        content.innerHTML = marked.parse(text);
+      } catch (err) {
+        content.innerHTML = "<p style='color:red'>Failed to load file.</p>";
+      }
+    }
+
+    if (files.length > 0) {
+      loadFile(files[0]);
+    }
+  </script>
+</body>
+</html>

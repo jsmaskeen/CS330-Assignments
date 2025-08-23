@@ -160,8 +160,6 @@ void syscall(void)
 
     num = proc->tf->r0;
 
-    //cprintf ("syscall(%d) from %s(%d)\n", num, proc->name, proc->pid);
-
     if((num > 0) && (num <= NELEM(syscalls)) && syscalls[num]) {
         ret = syscalls[num]();
 

@@ -11,3 +11,5 @@ kernel.elf
 kernel.sym
 
 
+.vercel
+docs/.vercel

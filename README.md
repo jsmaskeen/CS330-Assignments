@@ -1,7 +1,7 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/h2nLSOuW)
+Read what we did @ [https://assn1-ck.vercel.app/](https://assn1-ck.vercel.app/) or [docs](./docs/assignment%201.md)
 
 ---
-TODO:
+Assignment 1
 
 - [x] (2 pts.) "uptime" command to print how long has the system been running
 - [x] (3 pts.) pause <no. of seconds>
@@ -15,20 +15,19 @@ TODO:
     - pause's main should call exit(0) when it is done.
 
 - [x] (3 pts.) modify the shell to support tab completion, i.e., pressing the tab key should try to complete the command if it is unique and list the possible commands if they are not unique as per the string matching upto the text provided by the user
-- [ ] (4 pts.) ps command that prints details of all processes running on the system
+- [x] (4 pts.) ps command that prints details of all processes running on the system
 
     - You may have to implement various system calls as part of this command
     - You should print the process-id, parent's process id, name of the process, state of the process, and an additional field which prints the number of system calls the process has invoked. 
 
 
-
-
-
-
-
 ---
 
-# xv6-pi5 Documentation
+[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/h2nLSOuW)
+
+
+
+# Original Readme : xv6-pi5 Documentation
 
 ## Overview
 xv6-pi5 is a port of the MIT xv6 teaching operating system to the ARM architecture, with a focus on compatibility with the Raspberry Pi 5 platform. It provides a minimal Unix-like kernel, shell, file system, and basic user programs, serving as a hands-on resource for learning operating system fundamentals on ARM hardware.
