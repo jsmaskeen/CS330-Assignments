@@ -5,6 +5,12 @@
 int
 main(int argc, char **argv)
 {
+	if (argc > 1)
+	{
+		printf(1, "Usage: ps\n");
+		exit(1);
+	}
+
 	static char *states[] = {
 		[0] = "unused",
 		[1] = "embryo",
