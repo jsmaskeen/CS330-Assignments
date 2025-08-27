@@ -472,9 +472,9 @@ static void wakeup1(void *chan)
             // }
             // p->state = RUNNABLE;
             if (p->wakeup_tick == 0 || ticks >= p->wakeup_tick){
-                if (chan == &ticks){
-                    cprintf("%s (%d) wakeup\n",p->name, p->pid);
-                }
+                // if (chan == &ticks){
+                //     cprintf("%s (%d) wakeup\n",p->name, p->pid);
+                // }
                 p->state = RUNNABLE;
             }
         }

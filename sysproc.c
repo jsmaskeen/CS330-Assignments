@@ -82,7 +82,7 @@ int sys_sleep(void)
             release(&tickslock);
             return -1;
         }
-        cprintf("%s (%d) sleepcall\n",proc->name, proc->pid);
+        // cprintf("%s (%d) sleepcall\n",proc->name, proc->pid);
         sleep(&ticks, &tickslock);
     }
     proc->wakeup_tick = 0;
