@@ -67,6 +67,8 @@
     "param.h": "c",
     "defs.h": "c",
     "arm.h": "c",
-    "proc.h": "c"
+    "proc.h": "c",
+    "mmu.h": "c",
+    "typeinfo": "c"
   }
 }
