@@ -74,16 +74,18 @@ int sys_sleep(void)
     acquire(&tickslock);
 
     ticks0 = ticks;
-
-    while(ticks - ticks0 < n){
+    proc->wakeup_tick = ticks0 + n;
+    // for debugging / visualizing
+    // while(ticks - ticks0 < n){
+    while(ticks < proc->wakeup_tick){
         if(proc->killed){
             release(&tickslock);
             return -1;
         }
-
+        cprintf("%s (%d) sleepcall\n",proc->name, proc->pid);
         sleep(&ticks, &tickslock);
     }
-
+    proc->wakeup_tick = 0;
     release(&tickslock);
     return 0;
 }

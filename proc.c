@@ -68,6 +68,7 @@ static struct proc* allocproc(void)
     found:
     p->state = EMBRYO;
     p->pid = nextpid++;
+    p->wakeup_tick = 0;
     release(&ptable.lock);
 
     // Allocate kernel stack.
@@ -301,6 +302,7 @@ int wait(void)
                 p->parent = 0;
                 p->name[0] = 0;
                 p->killed = 0;
+                p->wakeup_tick = 0;
                 release(&ptable.lock);
 
                 return pid;
@@ -464,7 +466,17 @@ static void wakeup1(void *chan)
 
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if(p->state == SLEEPING && p->chan == chan) {
-            p->state = RUNNABLE;
+            // dor debugging / visualizing
+            // if (chan == &ticks){
+            //     cprintf("%s (%d) wakeup\n",p->name, p->pid);
+            // }
+            // p->state = RUNNABLE;
+            if (p->wakeup_tick == 0 || ticks >= p->wakeup_tick){
+                if (chan == &ticks){
+                    cprintf("%s (%d) wakeup\n",p->name, p->pid);
+                }
+                p->state = RUNNABLE;
+            }
         }
     }
 }

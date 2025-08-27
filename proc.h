@@ -68,6 +68,7 @@ struct proc {
     struct inode*   cwd;            // Current directory
     char            name[16];       // Process name (debugging)
     int             nsyscalls;      // Number of system calls made
+    uint            wakeup_tick;    // When do we wakeup this process
 };
 
 // Process memory is laid out contiguously, low addresses first:
