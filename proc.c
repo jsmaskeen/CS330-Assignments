@@ -7,6 +7,13 @@
 #include "proc.h"
 #include "spinlock.h"
 
+#define RAND_MAX 0x7fffffff
+uint rseed = 0;
+
+uint rand() {
+    return rseed = (rseed * 1103515245 + 12345) & RAND_MAX;
+}
+
 //
 // Process initialization:
 // process initialize is somewhat tricky.
@@ -105,6 +112,10 @@ static struct proc* allocproc(void)
 
     // set the number of syscalls
     p->nsyscalls = 0;
+    // set the number of tickets for this process
+    p->tickets = 1;
+    // intially the process will have no boosts
+    p->boosts = 0;
 
     return p;
 }
@@ -206,6 +217,9 @@ int fork(void)
     *np->tf = *proc->tf;
     // set the number of syscalls
     np->nsyscalls = 0;
+    // set the number of pickets of the child to be the same as the parent
+    np->tickets = proc->tickets;
+
     // Clear r0 so that fork returns 0 in the child.
     np->tf->r0 = 0;
 
@@ -320,6 +334,52 @@ int wait(void)
     }
 }
 
+int get_total_tickets() // returns the total number of tickets to be used during the lottery including artificially boosted tickets
+{
+    int total = 0;
+    for (struct proc* p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+    {
+        if (p->state != RUNNABLE) continue;
+        total += ((p->boosts ? 2 : 1) * p->tickets);
+    }
+    return total;
+}
+
+// returns a pointer to the lottery winner.
+struct proc *hold_lottery(int total_tickets) {
+    // total_tickets here includes the tickets obtained from artificial boosting during the lottery.
+    if (total_tickets <= 0) {
+        cprintf("this function should only be called when at least 1 process is RUNNABLE");
+        return 0;
+    }
+
+    uint random_number = rand();    // This number is between 0->4 billion
+    uint left = random_number % total_tickets + 1; // we pick the process that makes this number <= 0 when iterating through all the processes.
+
+    struct proc* winner;
+
+    for (struct proc* p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+    {
+        if (p->state != RUNNABLE) continue;
+        if (p->boosts){
+            p->boosts--;
+            if (2 * p->tickets >= left)
+            {
+                winner = p; break;
+            }
+            left -= 2 * p->tickets;
+        }
+        else{
+            if (p->tickets >= left)
+            {
+                winner = p; break;
+            }
+            left -= p->tickets;
+        }
+    }
+    return winner;
+}
+
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
@@ -339,25 +399,19 @@ void scheduler(void)
         // Loop over process table looking for process to run.
         acquire(&ptable.lock);
 
-        for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-            if(p->state != RUNNABLE) {
-                continue;
-            }
+        int total_tickets_during_lottery = get_total_tickets();
+        if (total_tickets_during_lottery == 0) goto next;
 
-            // Switch to chosen process.  It is the process's job
-            // to release ptable.lock and then reacquire it
-            // before jumping back to us.
-            proc = p;
-            switchuvm(p);
+        p = hold_lottery(total_tickets_during_lottery);
+        proc = p;
+        switchuvm(p);
+        p->state = RUNNING;
 
-            p->state = RUNNING;
-
-            swtch(&cpu->scheduler, proc->context);
-            // Process is done running for now.
-            // It should have changed its p->state before coming back.
-            proc = 0;
-        }
-
+        swtch(&cpu->scheduler, proc->context);
+        // Process is done running for now.
+        // It should have changed its p->state before coming back
+        proc = 0;
+        next:
         release(&ptable.lock);
     }
 }

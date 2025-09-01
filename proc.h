@@ -69,6 +69,8 @@ struct proc {
     char            name[16];       // Process name (debugging)
     int             nsyscalls;      // Number of system calls made
     uint            wakeup_tick;    // When do we wakeup this process
+    int             tickets;        // Currency used during lottery scheduling.
+    int             boosts;         // the number of lotteries for which the tickets owned by this process will be doubled
 };
 
 // Process memory is laid out contiguously, low addresses first:
