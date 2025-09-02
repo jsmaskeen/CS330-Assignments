@@ -27,3 +27,4 @@
 #define SYS_get_procname 26
 #define SYS_get_procstate 27
 #define SYS_get_procnsyscalls 28
+#define SYS_getpinfo 29

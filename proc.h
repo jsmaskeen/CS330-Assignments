@@ -71,6 +71,7 @@ struct proc {
     uint            wakeup_tick;    // When do we wakeup this process
     int             tickets;        // Currency used during lottery scheduling.
     int             boosts;         // the number of lotteries for which the tickets owned by this process will be doubled
+    int             runticks;        // the number of ticks this process has been scheduled
 };
 
 // Process memory is laid out contiguously, low addresses first:

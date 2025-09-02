@@ -6,6 +6,7 @@
 #include "arm.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "pstat.h"
 
 #define RAND_MAX 0x7fffffff
 uint rseed = 0;
@@ -116,6 +117,8 @@ static struct proc* allocproc(void)
     p->tickets = 1;
     // intially the process will have no boosts
     p->boosts = 0;
+    // initially the process has not consumed any ticks
+    p->runticks = 0;
 
     return p;
 }
@@ -406,6 +409,7 @@ void scheduler(void)
         proc = p;
         switchuvm(p);
         p->state = RUNNING;
+        p->runticks += 1; // this process has been scheduled for one more tick
 
         swtch(&cpu->scheduler, proc->context);
         // Process is done running for now.
@@ -645,4 +649,19 @@ int get_procname(int pid, char* buffer){
 
 int get_procstate(int pid){
     return get_process(pid)->state;
+}
+
+int get_pinfo(struct pstat *pstat) {
+    struct proc* p;
+
+    for (int i = 0; i < NPROC; i++) {
+        p = &ptable.proc[i];
+        pstat->inuse[i] = (p->state == UNUSED) ? 0 : 1;
+        pstat->pid[i] = p->pid;
+        pstat->tickets[i] = p->tickets;
+        pstat->boostsleft[i] = p->boosts;
+        pstat->runticks[i] = p->runticks;
+    }
+
+    return 0;
 }

@@ -121,6 +121,7 @@ extern int sys_get_parproc(void);
 extern int sys_get_procname(void);
 extern int sys_get_procstate(void);
 extern int sys_get_procnsyscalls(void);
+extern int sys_getpinfo(void);
 
 static int (*syscalls[])(void) = {
         [SYS_fork]              sys_fork,
@@ -150,7 +151,8 @@ static int (*syscalls[])(void) = {
         [SYS_get_parproc]       sys_get_parproc,
         [SYS_get_procname]      sys_get_procname,
         [SYS_get_procstate]     sys_get_procstate,
-        [SYS_get_procnsyscalls] sys_get_procnsyscalls
+        [SYS_get_procnsyscalls] sys_get_procnsyscalls,
+        [SYS_getpinfo]         sys_getpinfo
 };
 
 void syscall(void)

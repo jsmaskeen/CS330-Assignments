@@ -1,4 +1,6 @@
 struct stat;
+struct pstat;
+
 // system calls
 int fork(void);
 int exit(int) __attribute__((noreturn));
@@ -28,6 +30,7 @@ int get_parproc(int pid);
 int get_procname(int pid, char* buffer);
 int get_procstate(int pid);
 int get_procnsyscalls(int pid);
+int getpinfo(struct pstat* pstat);
 
 // ulib.c
 int stat(char*, struct stat*);

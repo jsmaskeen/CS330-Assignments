@@ -5,6 +5,7 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
+#include "pstat.h"
 
 int sys_fork(void)
 {
@@ -176,4 +177,12 @@ int sys_get_procnsyscalls(void) {
     }
 
     return get_nsyscall(pid);
+}
+
+int sys_getpinfo(void) {
+    struct pstat *pstat;
+    if(argptr(0, (char**)&pstat, sizeof(*pstat)) < 0) {
+        return -1;
+    }
+    return get_pinfo(pstat);
 }
