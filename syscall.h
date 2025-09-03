@@ -28,3 +28,5 @@
 #define SYS_get_procstate 27
 #define SYS_get_procnsyscalls 28
 #define SYS_getpinfo 29
+#define SYS_srand 30
+#define SYS_settickets 31

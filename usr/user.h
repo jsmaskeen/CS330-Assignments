@@ -31,6 +31,8 @@ int get_procname(int pid, char* buffer);
 int get_procstate(int pid);
 int get_procnsyscalls(int pid);
 int getpinfo(struct pstat* pstat);
+void srand(int seed);
+int settickets(int pid, int n_tickets);
 
 // ulib.c
 int stat(char*, struct stat*);
