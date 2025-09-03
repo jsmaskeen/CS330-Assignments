@@ -7,5 +7,3 @@ struct pstat {
   int runticks[NPROC];  // total number of timer ticks this process has been scheduled
   int boostsleft[NPROC]; // how many more ticks will this process be boosted?
 };
-
-int get_pinfo(struct pstat *pstat);
