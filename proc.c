@@ -647,7 +647,7 @@ int get_procname(int pid, char* buffer){
     return 0;
 }
 
-int get_procstate(int pid){
+int get_procstate(int pid) {
     return get_process(pid)->state;
 }
 
@@ -663,5 +663,17 @@ int get_pinfo(struct pstat *pstat) {
         pstat->runticks[i] = p->runticks;
     }
 
+    return 0;
+}
+
+void srand(uint seed) {
+    rseed = seed;
+}
+
+int settickets(int pid, int n_tickets) {
+    struct proc *p = get_process(pid);
+    if (p == 0 || n_tickets < 0) 
+        return -1;
+    p->tickets = n_tickets;
     return 0;
 }

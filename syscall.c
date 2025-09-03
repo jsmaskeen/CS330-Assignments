@@ -122,6 +122,8 @@ extern int sys_get_procname(void);
 extern int sys_get_procstate(void);
 extern int sys_get_procnsyscalls(void);
 extern int sys_getpinfo(void);
+extern int sys_srand(void);
+extern int sys_settickets(void);
 
 static int (*syscalls[])(void) = {
         [SYS_fork]              sys_fork,
@@ -152,7 +154,9 @@ static int (*syscalls[])(void) = {
         [SYS_get_procname]      sys_get_procname,
         [SYS_get_procstate]     sys_get_procstate,
         [SYS_get_procnsyscalls] sys_get_procnsyscalls,
-        [SYS_getpinfo]         sys_getpinfo
+        [SYS_getpinfo]          sys_getpinfo,
+        [SYS_srand]             sys_srand,
+        [SYS_settickets]        sys_settickets,
 };
 
 void syscall(void)

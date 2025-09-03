@@ -186,3 +186,19 @@ int sys_getpinfo(void) {
     }
     return get_pinfo(pstat);
 }
+
+int sys_srand(void) {
+    int seed;
+    if (argint(0, &seed) < 0) 
+        return -1;
+    srand(seed);
+    return 0;
+}
+
+int sys_settickets(void) {
+    int pid, n_tickets;
+    if (argint(0, &pid) < 0 || argint(1, &n_tickets) < 0) 
+        return -1;
+
+    return settickets(pid, n_tickets);
+}
