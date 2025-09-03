@@ -16,6 +16,7 @@ struct file;
 struct inode;
 struct pipe;
 struct proc;
+struct pstat;
 struct spinlock;
 struct stat;
 struct superblock;
@@ -142,6 +143,9 @@ int 						get_proclist(int*);
 int 						get_parproc(int);
 int 						get_procname(int, char*);
 int 						get_procstate(int);
+int 						get_pinfo(struct pstat *);
+void 						srand(uint);
+int 						settickets(int, int);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
