@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
         {
             printf(1, "Sleeping process (PID %d) doing work, loop %d/5.\n", getpid(), i + 1);
             light_task();
-            printf(1, "Sleeping process (PID %d) going to sleep. Current boosts: %d\n", getpid());
+            printf(1, "Sleeping process (PID %d) going to sleep.\n", getpid());
             sleep(50);
         }
         printf(1, "Sleeping process (PID %d) finished its loops.\n", getpid());
