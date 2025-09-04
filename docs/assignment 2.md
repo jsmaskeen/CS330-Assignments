@@ -242,6 +242,22 @@ With these temporary logging messages, we can see the running of this improved s
   <source src="./media/improved_sleep.mp4" type="video/mp4">
 </video>
 
+## 2. New syscalls
+We defined the new syscalls `settickets()` and `getpinfo()` to allow user processes to set their own ticket counts and retrieve process information, respectively. 
+We also defined a syscall called `srand()` to seed the random number generator.
+
+### `settickets()`
+The `settickets()` syscall allows a process to set its own ticket count. This is done by retrieving the ticket count from the user space argument and updating the `tickets` field in the `proc` struct of the calling process. We also added a check to ensure that the ticket count is a positive integer.
+### `getpinfo()`
+For getpinfo, we defined a new struct `pstat` to hold the process information. This struct includes fields for the process ID, the number of tickets, the number of runtime ticks, and the number of boosts left. The `getpinfo()` syscall fills an instance of this struct with the relevant information for the calling process. Notably, there is no global pstat struct; a new instance is created whenever the function is called. We also added a new field `numticks` in `proc` struct to track the total number of ticks the process has received.
+### `srand()`
+The `srand()` syscall is used to seed the random number generator with a specific value. This allows for more predictable and repeatable random number generation, which can be useful for testing and debugging purposes.
+
+### `dispstat`
+The `dispstat` user application is used to display the current status of the process table. It provides information about all processes, including their PID, state, and other relevant statistics. This can be useful for monitoring and debugging purposes. This is implemented using the `getpinfo()` syscall to retrieve the necessary process information.
+
+![alt text](media/dispstat.png)
+
 ## Tests
 
 First we need to test whether the proportion of time the proceses are scheduled for is equal to the ratio of the number of tickets assigned to them. We include this test as a user command `prop_test`.
