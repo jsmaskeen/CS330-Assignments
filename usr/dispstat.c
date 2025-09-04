@@ -32,6 +32,7 @@ main(int argc, char **argv)
     printf(1, "+-----+-------+---------+----------+------------+\n");
 
 	for (i = 0; i < NPROC; i++) {
+		if(pstat->inuse[i] == 0) continue;
 		printf(1, "|  %d  |   %d   |    %d    |     %d    |     %d     |\n",
                   pstat->pid[i],
                   pstat->inuse[i],
