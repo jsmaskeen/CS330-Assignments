@@ -358,7 +358,7 @@ struct proc *hold_lottery(int total_tickets) {
 
     uint random_number = rand();    // This number is between 0->4 billion
     uint left = random_number % total_tickets + 1; // we pick the process that makes this number <= 0 when iterating through all the processes.
-    cprintf("%d\n", total_tickets);
+    //cprintf("%d\n", total_tickets);
 
     struct proc* winner;
 
@@ -407,7 +407,7 @@ void scheduler(void)
         if (total_tickets_during_lottery == 0) goto next;
 
         p = hold_lottery(total_tickets_during_lottery);
-        cprintf("KERNAL LOTTERY: %d\n", p->pid); // is the 
+        //cprintf("KERNAL LOTTERY: %d\n", p->pid); // is the 
         proc = p;
         switchuvm(p);
         p->state = RUNNING;
