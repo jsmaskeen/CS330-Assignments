@@ -358,7 +358,6 @@ struct proc *hold_lottery(int total_tickets) {
 
     uint random_number = rand();    // This number is between 0->4 billion
     uint left = random_number % total_tickets + 1; // we pick the process that makes this number <= 0 when iterating through all the processes.
-    //cprintf("%d\n", total_tickets);
 
     struct proc* winner;
 
@@ -407,7 +406,6 @@ void scheduler(void)
         if (total_tickets_during_lottery == 0) goto next;
 
         p = hold_lottery(total_tickets_during_lottery);
-        //cprintf("KERNAL LOTTERY: %d\n", p->pid); // is the 
         proc = p;
         switchuvm(p);
         p->state = RUNNING;
@@ -418,27 +416,6 @@ void scheduler(void)
         // It should have changed its p->state before coming back
         proc = 0;
         next:
-        // rr sched
-
-        // for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-        //     if(p->state != RUNNABLE) {
-        //         continue;
-        //     }
-
-        //     // Switch to chosen process.  It is the process's job
-        //     // to release ptable.lock and then reacquire it
-        //     // before jumping back to us.
-        //     proc = p;
-        //     switchuvm(p);
-
-        //     p->state = RUNNING;
-
-        //     swtch(&cpu->scheduler, proc->context);
-        //     // Process is done running for now.
-        //     // It should have changed its p->state before coming back.
-        //     proc = 0;
-        // }
-
         release(&ptable.lock);
     }
 }

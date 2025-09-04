@@ -24,6 +24,7 @@ void irq_handler (struct trapframe *r)
     pic_dispatch (r);
     if (proc!= NULL){
         yield();
+        if (proc->killed) exit(0);
     }
 
 }
