@@ -13,8 +13,8 @@ struct pstat {
 int
 main(int argc, char **argv)
 {
-	int c1 = 0;
-	int c2 = 0;
+	// int c1 = 0;
+	// int c2 = 0;
 	struct pstat *pstat_table = (struct pstat *)malloc(sizeof(struct pstat));
 
 	for (int i = 0; i < 10; i++) {
@@ -31,31 +31,34 @@ main(int argc, char **argv)
 		// TODO: set the number of tickest for both the processes
 
 		if (pid1 == 0) {
-			for (int j = 0; j < 10000; j++);
+			for (int j = 0; j < 10000000; j++);
+			int curpid = getpid();
+			getpinfo(pstat_table);
+
+			for (int i = 0; i < 64; i++) {
+				if (pstat_table->pid[i] == curpid) {
+					printf(1, "Ticks for PID %d: %d\n", curpid, pstat_table->runticks[i]);
+				}
+			}
+			break;
 		} else if (pid2 == 0) {
-			for (int j = 0; j < 10000; j++);
+			for (int j = 0; j < 10000000; j++);
+			int curpid = getpid();
+			getpinfo(pstat_table);
+
+			for (int i = 0; i < 64; i++) {
+				if (pstat_table->pid[i] == curpid) {
+					printf(1, "Ticks for PID %d: %d\n", curpid, pstat_table->runticks[i]);
+				}
+			}
+			break;
 		}
 
 		if (pid1 > 0 && pid2 > 0) {
 			wait();
 			wait();
 
-			getpinfo(pstat_table);
-			int inc = 0;
-			for (int i = 0; i < 64; i++) {
-				if (pstat_table->pid[i] == pid1) {
-					c1 += pstat_table->runticks[i];
-					inc++;
-				}
-				if (pstat_table->pid[i] == pid2) {
-					c2 += pstat_table->runticks[i];
-					inc++;
-				}
-			}
-
-			if (inc != 2) {
-				// printf(1, "Inc: %d\n", inc);
-			}
+			printf(1, "Child pids: %d %d\n", pid1, pid2);
 		}
 	}
     
