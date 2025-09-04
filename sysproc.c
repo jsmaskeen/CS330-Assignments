@@ -78,7 +78,6 @@ int sys_sleep(void)
     proc->wakeup_tick = ticks0 + n;
     // for debugging / visualizing
     // while(ticks - ticks0 < n){
-    proc->boosts += n; // give boosts for sleep time
     while(ticks < proc->wakeup_tick){
         if(proc->killed){
             release(&tickslock);
@@ -89,6 +88,7 @@ int sys_sleep(void)
     }
     proc->wakeup_tick = 0;
     release(&tickslock);
+    proc->boosts += n; // give boosts for sleep time
     return 0;
 }
 
