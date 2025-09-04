@@ -19,10 +19,13 @@ void irq_handler (struct trapframe *r)
     // running scheduler, proc is NULL.
     if (proc != NULL) {
         proc->tf = r;
-        yield();
     }
 
     pic_dispatch (r);
+    if (proc!= NULL){
+        yield();
+    }
+
 }
 
 // trap routine

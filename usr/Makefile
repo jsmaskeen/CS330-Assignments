@@ -27,6 +27,7 @@ UPROGS=\
 	_ps\
 	_dispstat\
 	_test_scheduler\
+	_rr_test\
 
 
 all: $(FS_IMAGE)

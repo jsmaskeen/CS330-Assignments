@@ -402,7 +402,7 @@ void scheduler(void)
 
         // Loop over process table looking for process to run.
         acquire(&ptable.lock);
-
+        // lottery sched
         int total_tickets_during_lottery = get_total_tickets();
         if (total_tickets_during_lottery == 0) goto next;
 
@@ -418,6 +418,27 @@ void scheduler(void)
         // It should have changed its p->state before coming back
         proc = 0;
         next:
+        // rr sched
+
+        // for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        //     if(p->state != RUNNABLE) {
+        //         continue;
+        //     }
+
+        //     // Switch to chosen process.  It is the process's job
+        //     // to release ptable.lock and then reacquire it
+        //     // before jumping back to us.
+        //     proc = p;
+        //     switchuvm(p);
+
+        //     p->state = RUNNING;
+
+        //     swtch(&cpu->scheduler, proc->context);
+        //     // Process is done running for now.
+        //     // It should have changed its p->state before coming back.
+        //     proc = 0;
+        // }
+
         release(&ptable.lock);
     }
 }
