@@ -360,22 +360,25 @@ struct proc *hold_lottery(int total_tickets) {
     uint left = random_number % total_tickets + 1; // we pick the process that makes this number <= 0 when iterating through all the processes.
 
     struct proc* winner;
+    int winner_found = -1;
 
     for (struct proc* p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     {
         if (p->state != RUNNABLE) continue;
         if (p->boosts){
             p->boosts--;
-            if (2 * p->tickets >= left)
+            if (2 * p->tickets >= left && winner_found == -1) 
             {
-                winner = p; break;
+                    winner = p; 
+                    winner_found = 1;
             }
             left -= 2 * p->tickets;
         }
         else{
-            if (p->tickets >= left)
+            if (p->tickets >= left && winner_found == -1)
             {
-                winner = p; break;
+                    winner = p; 
+                    winner_found = 1;
             }
             left -= p->tickets;
         }
