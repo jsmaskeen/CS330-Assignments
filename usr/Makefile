@@ -26,8 +26,6 @@ UPROGS=\
 	_pause\
 	_ps\
 	_dispstat\
-	_test_scheduler\
-	_rr_test\
 	_prop_test\
 	_boost_test\
 
