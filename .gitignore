@@ -1,0 +1,17 @@
+# ignore files created by make
+build/*
+tools/mkfs
+usr/\_*
+usr/*.asm
+usr/*.sym
+usr/*.o
+initcode.asm
+kernel.asm
+kernel.elf
+kernel.sym
+
+
+.vercel
+docs/.vercel
+.github
+.idea
