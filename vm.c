@@ -445,3 +445,61 @@ void paging_init (uint phy_low, uint phy_hi)
     mappages (P2V(&_kernel_pgtbl), P2V(phy_low), phy_hi - phy_low, phy_low, AP_KU);
     flush_tlb ();
 }
+
+void pgdump1(pde_t *pgdir)
+{
+    pte_t *pte;
+    uint i;
+    uint proc_size = proc->sz;
+
+    cprintf("page_dump: starting for PID %d (size: 0x%x)\n", proc->pid, proc_size);
+    cprintf("Top 10 pages:\n");
+    for (i = 0; i < 10 * PTE_SZ; i += PTE_SZ) {
+        pte = walkpgdir(pgdir, (void *)i, 0);
+        // PTE is valid and present
+        if (pte && (*pte & PE_TYPES)) {
+            cprintf("va 0x%x, pa 0x%x, flags 0x%x\n", i, PTE_ADDR(*pte), *pte & 0xFFF);
+        }
+    }
+
+    cprintf("Bottom 10 pages (without exceeding process size):\n");
+    uint start_va;
+    // start_va is the top of the bottom ten pages in the page tabel.
+    if (proc_size > 10 * PTE_SZ) {
+        start_va = proc_size - (10 * PTE_SZ);
+    } else {
+        start_va = 0;
+    }
+
+    // align start_va to nearest page boundary
+    start_va = align_dn(start_va, PTE_SZ);
+
+    for (i = start_va; i < proc_size; i += PTE_SZ) {
+        pte = walkpgdir(pgdir, (void *)i, 0);
+        if (pte && (*pte & PE_TYPES)) {
+            cprintf("va 0x%x, pa 0x%x, flags 0x%x\n", i, PTE_ADDR(*pte), *pte & 0xFFF);
+        }
+
+    }
+    cprintf("page_dump: OK\n");
+}
+
+void kpgdump1(void)
+{
+    cprintf("kernel_page_dump: starting\n");
+    cprintf("kpgdir at P:0x%x, V:0x%x\n", V2P(kpgdir), kpgdir);
+
+    // Kernel entries start at KERNBASE.
+    for (uint i = PDE_IDX(KERNBASE); i < 4096; i++) {
+        pde_t pde = kpgdir[i];
+
+        // Valid PDE: type!=0
+        // for the kernel, it should be KPDE_TYPE 
+        if (pde & KPDE_TYPE) {
+            uint va = i * PDE_SZ; // VA for this PDE
+            cprintf("PDE[%d] va 0x%x pa 0x%x flags 0x%x\n",
+                    i, va, (pde & ~0xFFF), (pde & 0xFFF));
+        }
+    }
+    cprintf("kernel_page_dump: OK\n");
+}

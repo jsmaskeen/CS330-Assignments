@@ -30,3 +30,5 @@
 #define SYS_getpinfo 29
 #define SYS_srand 30
 #define SYS_settickets 31
+#define SYS_pgdump 32
+#define SYS_kpgdump 33

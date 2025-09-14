@@ -202,3 +202,12 @@ int sys_settickets(void) {
 
     return settickets(pid, n_tickets);
 }
+
+int sys_pgdump(void) {
+    pgdump1(proc->pgdir);
+    return 0;
+}
+int sys_kpgdump(void) {
+    kpgdump1();
+    return 0;
+}

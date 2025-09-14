@@ -124,6 +124,8 @@ extern int sys_get_procnsyscalls(void);
 extern int sys_getpinfo(void);
 extern int sys_srand(void);
 extern int sys_settickets(void);
+extern int sys_pgdump(void);
+extern int sys_kpgdump(void);
 
 static int (*syscalls[])(void) = {
         [SYS_fork]              sys_fork,
@@ -157,6 +159,8 @@ static int (*syscalls[])(void) = {
         [SYS_getpinfo]          sys_getpinfo,
         [SYS_srand]             sys_srand,
         [SYS_settickets]        sys_settickets,
+        [SYS_pgdump]            sys_pgdump,
+        [SYS_kpgdump]           sys_kpgdump,
 };
 
 void syscall(void)
