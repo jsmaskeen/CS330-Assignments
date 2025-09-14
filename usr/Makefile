@@ -28,6 +28,7 @@ UPROGS=\
 	_dispstat\
 	_prop_test\
 	_boost_test\
+	_pgtable_test\
 
 
 all: $(FS_IMAGE)
