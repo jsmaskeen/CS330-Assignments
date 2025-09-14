@@ -1,6 +1,12 @@
 Assignment 3
 
+### Task 1 
+Original test.c [`./usr/original_test.c`](./usr/original_test.c)
+Modified test.c [`./usr/pgtable_test.c`](./usr/pgtable_test.c)
 
+### Task 2
+
+@Karan
 
 ---
 
@@ -8,7 +14,7 @@ Assignment 3
 
 We continue working on our previous code base for this assignment, too. In this assignment, we will explore paging. 
 
-1. Implement a system call that prints out the page-table entries for the first 10 and last 10 pages of the test process (download the program here and include it in your repo with proper changes to work with your OS using the system call). 
+1. Implement a system call that prints out the page-table entries for the first 10 and last 10 pages of the test process (download the program [here](./usr/original_test.c) and include it in your repo with proper changes to work with your OS using the system call). 
 Include a README in your repo that explains the output and each of the bits in the page table entries.
 
 2. Implement on-demand paging (do not panic on page faults) within the xv6 operating system. Write a user program to test that your paging technique works. 
