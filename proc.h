@@ -1,7 +1,7 @@
 #ifndef PROC_INCLUDE_
 #define PROC_INCLUDE_
 
-#define PG_QUEUE_SZ 320 // 128 mb / pg_size = 128 mb / 4 kb = 32000
+#define PG_QUEUE_SZ 500 // 128 mb / pg_size = 128 mb / 4 kb = 32000
 
 // Per-CPU state, now we only support one CPU
 struct cpu {

@@ -236,6 +236,7 @@ int evict_page(pde_t *pgdir) {
     pte_t *pte;
 
     while (1) {
+        cprintf("Trying to evict\n");
         char* current_page_addr = pg_queue_front();
         pop_pg_queue();
         pte = walkpgdir(pgdir, (char*) current_page_addr, 0);
@@ -278,12 +279,12 @@ int allocuvm (pde_t *pgdir, uint oldsz, uint newsz)
                 panic("Still no memory, wtf is going on?\n");
                 return -1;
             }
-            push_pg_queue(mem);
             // deallocuvm(pgdir, newsz, oldsz);
         }
 
         memset(mem, 0, PTE_SZ);
         mappages(pgdir, (char*) a, PTE_SZ, v2p(mem), AP_KU);
+        push_pg_queue(mem);
     }
 
     return newsz;

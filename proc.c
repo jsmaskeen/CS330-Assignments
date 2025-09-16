@@ -142,7 +142,10 @@ void push_pg_queue(char* pg_no) {
         panic("page queue size is full\n");
         return;
     }
+    // cprintf("\n\nPushing to the queue\n\n");
     proc->pg_queue[(proc->pg_queue_tail + 1) % PG_QUEUE_SZ] = pg_no;
+    proc->pg_queue_tail++;
+    proc->pg_queue_tail %= PG_QUEUE_SZ;
 }
 
 void pop_pg_queue() {
