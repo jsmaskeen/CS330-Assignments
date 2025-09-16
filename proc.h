@@ -1,6 +1,8 @@
 #ifndef PROC_INCLUDE_
 #define PROC_INCLUDE_
 
+#define PG_QUEUE_SZ 320 // 128 mb / pg_size = 128 mb / 4 kb = 32000
+
 // Per-CPU state, now we only support one CPU
 struct cpu {
     uchar           id;             // index into cpus[] below
@@ -73,6 +75,9 @@ struct proc {
     int             boosts;                  // the number of lotteries for which the tickets owned by this process will be doubled
     int             runticks;                // the number of ticks this process has been scheduled
     struct usyscall* usyscall;               // proc's shared page with the kernel
+    int             pg_queue_head;           // position where to add the next element in the queue
+    int             pg_queue_tail;           // position where to add the next element in the queue
+    char*           pg_queue[PG_QUEUE_SZ];   // the queue which holds the next page to evict
 };
 
 // Process memory is laid out contiguously, low addresses first:

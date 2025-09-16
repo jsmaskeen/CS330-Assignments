@@ -29,6 +29,7 @@
 
 #define PE_CACHE    (1 << 3)// cachable
 #define PE_BUF      (1 << 2)// bufferable
+#define PTE_V      (1 << 7) // Valid bit
 
 #define PE_TYPES    0x03    // mask for page type
 #define KPDE_TYPE   0x02    // use "section" type for kernel page directory

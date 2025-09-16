@@ -30,7 +30,6 @@ void kmain (void)
     kpt_freerange (align_up(&end, PT_SZ), vectbl);
     kpt_freerange (vectbl + PT_SZ, P2V_WO(INIT_KERNMAP));
     paging_init (INIT_KERNMAP, PHYSTOP);
-    
     kmem_init ();
     kmem_init2(P2V(INIT_KERNMAP), P2V(PHYSTOP));
     

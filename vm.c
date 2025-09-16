@@ -9,6 +9,10 @@
 #include "elf.h"
 #include "usyscall.h"
 
+extern void push_pg_queue(char *);
+extern void pop_pg_queue();
+extern char* pg_queue_front();
+
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
 
@@ -134,7 +138,6 @@ int mappages (pde_t *pgdir, void *va, uint size, uint pa, int ap)
         if (*pte & PE_TYPES) {
             panic("remap");
         }
-
         *pte = pa | ((ap & 0x3) << 4) | PE_CACHE | PE_BUF | PTE_TYPE;
 
         if (a == last) {
@@ -191,6 +194,7 @@ void inituvm (pde_t *pgdir, char *init, uint sz)
     memset(mem, 0, PTE_SZ);
     mappages(pgdir, 0, PTE_SZ, v2p(mem), AP_KU);
     memmove(mem, init, sz);
+    push_pg_queue(mem);
 }
 
 // Load a program segment into pgdir.  addr must be page-aligned
@@ -208,6 +212,7 @@ int loaduvm (pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
         if ((pte = walkpgdir(pgdir, addr + i, 0)) == 0) {
             panic("loaduvm: address should exist");
         }
+        // TODO set the not evict flag
 
         pa = PTE_ADDR(*pte);
 
@@ -220,6 +225,25 @@ int loaduvm (pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
         if (readi(ip, p2v(pa), offset + i, n) != n) {
             return -1;
         }
+    }
+
+    return 0;
+}
+
+// evicts the first page from the current process
+int evict_page(pde_t *pgdir) {
+    // flush_tlb();
+    pte_t *pte;
+
+    while (1) {
+        char* current_page_addr = pg_queue_front();
+        pop_pg_queue();
+        pte = walkpgdir(pgdir, (char*) current_page_addr, 0);
+        if (pte == 0) 
+            continue;
+
+        deallocuvm(pgdir, ((uint)current_page_addr) + PTE_SZ, (uint)current_page_addr);
+        break;
     }
 
     return 0;
@@ -248,8 +272,14 @@ int allocuvm (pde_t *pgdir, uint oldsz, uint newsz)
         if (mem == 0) {
             // just dealloc the last page
             cprintf("allocuvm out of memory\n"); // TODO: Fix this
-            deallocuvm(pgdir, newsz, oldsz);
-            return 0;
+            evict_page(pgdir); // this will dealloc the page also
+            mem = alloc_page();
+            if (mem == 0) {
+                panic("Still no memory, wtf is going on?\n");
+                return -1;
+            }
+            push_pg_queue(mem);
+            // deallocuvm(pgdir, newsz, oldsz);
         }
 
         memset(mem, 0, PTE_SZ);
