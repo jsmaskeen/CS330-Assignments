@@ -451,10 +451,10 @@ void pgdump1(pde_t *pgdir)
     pte_t *pte;
     uint i;
     uint proc_size = proc->sz;
-
     cprintf("page_dump: starting for PID %d (size: 0x%x)\n", proc->pid, proc_size);
     cprintf("Top 10 pages:\n");
-    for (i = 0; i < 10 * PTE_SZ; i += PTE_SZ) {
+                //  proc_size // for full ptable
+    for (i = 0; i < 10*PTE_SZ; i += PTE_SZ) {
         pte = walkpgdir(pgdir, (void *)i, 0);
         // PTE is valid and present
         if (pte && (*pte & PE_TYPES)) {

@@ -4,7 +4,7 @@
 #include "param.h"
 #include "mmu.h"
 
-#define N (8 * (1 << 20)) // 8 MiB
+#define N (8 * (1 << 20)) // 8 MiB // max 125 MiB works fails otherwise
 
 void print_pt_test();
 void ugetpid_test();
@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
   int num_pages_to_alloc = 25;
   int size = num_pages_to_alloc * PTE_SZ;
   char *mem = sbrk(size);
-  if (mem == (char*)-1) {
+  if (mem == (char*)(-1)) {
     err("sbrk for 25 pages failed");
   }
   printf(1, "Success!\n");
@@ -98,12 +98,12 @@ void superpg_test()
   if (mem == (char*)-1) {
     err("sbrk failed to allocate large memory");
   }
-
+  // write test
   for (uint i = 0; i < N/2; i++) {
     mem[i] = (char)(i % 256);
     mem[N - 1 - i] = (char)(i % 256);
   }
-
+  // read test
   for (uint i = 0; i < N/2; i++) {
     if (mem[i] != (char)(i % 256) || mem[N - 1 - i] != (char)(i % 256)) {
       err("memory content mismatch");
