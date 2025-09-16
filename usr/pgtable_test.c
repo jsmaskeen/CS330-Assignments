@@ -5,6 +5,7 @@
 #include "mmu.h"
 
 #define N (8 * (1 << 20)) // 8 MiB // max 125 MiB works fails otherwise
+#define PGSIZE (1 << PTE_SHIFT)  // user pages are 4KB in size
 
 void print_pt_test();
 void ugetpid_test();
@@ -21,7 +22,8 @@ int main(int argc, char *argv[])
 
     printf(1, "\nAllocating 25 pages\n");
     int num_pages_to_alloc = 25;
-    int size = num_pages_to_alloc * PTE_SZ;
+    
+    int size = num_pages_to_alloc * PGSIZE;
     char *mem = sbrk(size);
     if (mem == (char*)(-1)) {
         err("sbrk for 25 pages failed");
