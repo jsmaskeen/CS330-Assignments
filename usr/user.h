@@ -49,3 +49,4 @@ void* malloc(uint);
 void free(void*);
 int atoi(const char*);
 char* strncpy(char*, const char*, int);
+int ugetpid(void);

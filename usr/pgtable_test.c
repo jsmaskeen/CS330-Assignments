@@ -66,16 +66,18 @@ void ugetpid_test()
     testname = "ugetpid_test";
     printf(1, "\nugetpid_test: starting\n");
 
-    for (i = 0; i < 5; i++) {
+    for (i = 0; i < 30; i++) {
         int pid = fork();
         if (pid < 0) {
             err("fork failed");
         }
-        if (pid == 0) {
-            exit(0);
+        else if (pid == 0) {
+          if (getpid() != ugetpid())
+            err("missmatched PID");
+          exit(0);
+        } else {
+          wait();
         }
-
-        wait();
     }
     printf(1, "ugetpid_test: OK\n");
 }

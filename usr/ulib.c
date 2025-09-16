@@ -2,6 +2,7 @@
 #include "stat.h"
 #include "fcntl.h"
 #include "user.h"
+#include "usyscall.h"
 
 char*
 strcpy(char *s, char *t)
@@ -141,4 +142,12 @@ memmove(void *vdst, void *vsrc, int n)
     while(n-- > 0)
         *dst++ = *src++;
     return vdst;
+}
+
+int
+ugetpid(void)
+{
+  struct usyscall *u = (struct usyscall *)USYSCALL;
+  return u->pid;
+  // return u->pid + 1; // @karan try uncommenting this see how pftable_test will fail at ugetpid
 }

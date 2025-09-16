@@ -7,6 +7,7 @@
 #include "proc.h"
 #include "spinlock.h"
 #include "elf.h"
+#include "usyscall.h"
 
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
@@ -117,7 +118,7 @@ static pte_t* walkpgdir (pde_t *pgdir, const void *va, int alloc)
 // Create PTEs for virtual addresses starting at va that refer to
 // physical addresses starting at pa. va and size might not
 // be page-aligned.
-static int mappages (pde_t *pgdir, void *va, uint size, uint pa, int ap)
+int mappages (pde_t *pgdir, void *va, uint size, uint pa, int ap)
 {
     char *a, *last;
     pte_t *pte;
@@ -351,6 +352,10 @@ pde_t* copyuvm (pde_t *pgdir, uint sz)
 
     // copy the whole address space over (no COW)
     for (i = 0; i < sz; i += PTE_SZ) {
+        if(i == USYSCALL){
+            // Don't copy the parent's usyscall page cause child will get its own in fork().
+            continue;
+        }
         if ((pte = walkpgdir(pgdir, (void *) i, 0)) == 0) {
             panic("copyuvm: pte should exist");
         }
