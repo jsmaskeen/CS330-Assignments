@@ -139,8 +139,8 @@ static struct proc* allocproc(void)
 
 void push_pg_queue(char* pg_no) {
     if ((proc->pg_queue_tail + 1) % PG_QUEUE_SZ == proc->pg_queue_head) {
-        panic("page queue size is full\n");
-        return;
+        // panic("page queue size is full\n");
+        // return;
     }
     // cprintf("\n\nPushing to the queue\n\n");
     proc->pg_queue[(proc->pg_queue_tail + 1) % PG_QUEUE_SZ] = pg_no;

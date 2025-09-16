@@ -4,7 +4,7 @@
 #include "param.h"
 #include "mmu.h"
 
-#define N (8 * (1 << 20)) // 8 MiB // max 125 MiB works fails otherwise
+#define N (125 * (1 << 20)) + (1 << 19) // 8 MiB // max 125 MiB works fails otherwise
 #define PGSIZE (1 << PTE_SHIFT)  // user pages are 4KB in size
 
 void print_pt_test();

@@ -234,16 +234,26 @@ int loaduvm (pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 int evict_page(pde_t *pgdir) {
     // flush_tlb();
     pte_t *pte;
+    // uint pa;
 
     while (1) {
         cprintf("Trying to evict\n");
         char* current_page_addr = pg_queue_front();
         pop_pg_queue();
-        pte = walkpgdir(pgdir, (char*) current_page_addr, 0);
+        pte = walkpgdir(pgdir, current_page_addr, 0);
+        cprintf("Pointer returned: %p, Value: %d, Query Addr: %p\n", pte, *pte, current_page_addr);
         if (pte == 0) 
             continue;
 
-        deallocuvm(pgdir, ((uint)current_page_addr) + PTE_SZ, (uint)current_page_addr);
+        // pa = PTE_ADDR(*pte);
+
+        // if (pa == 0) {
+        //     panic("deallocuvm");
+        // }
+
+        free_page(current_page_addr);
+        cprintf("Evict sucess\n");
+        *pte = 0;
         break;
     }
 
@@ -269,7 +279,7 @@ int allocuvm (pde_t *pgdir, uint oldsz, uint newsz)
 
     for (; a < newsz; a += PTE_SZ) {
         mem = alloc_page();
-
+        // cprintf("Mem: %p\n", mem);
         if (mem == 0) {
             // just dealloc the last page
             cprintf("allocuvm out of memory\n"); // TODO: Fix this
@@ -280,11 +290,13 @@ int allocuvm (pde_t *pgdir, uint oldsz, uint newsz)
                 return -1;
             }
             // deallocuvm(pgdir, newsz, oldsz);
+            // cprintf("Mem: %p, newsz: %p, oldz: %p\n", mem, newsz, oldsz);
+            // return -1;
         }
 
         memset(mem, 0, PTE_SZ);
         mappages(pgdir, (char*) a, PTE_SZ, v2p(mem), AP_KU);
-        push_pg_queue(mem);
+        push_pg_queue((mem));
     }
 
     return newsz;
