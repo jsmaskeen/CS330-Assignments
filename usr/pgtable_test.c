@@ -5,6 +5,7 @@
 #include "mmu.h"
 
 #define N (8 * (1 << 20)) // 8 MiB // max 125 MiB works fails otherwise
+#define PGSIZE (1 << PTE_SHIFT)  // user pages are 4KB in size
 
 void print_pt_test();
 void ugetpid_test();
@@ -21,7 +22,8 @@ int main(int argc, char *argv[])
 
     printf(1, "\nAllocating 25 pages\n");
     int num_pages_to_alloc = 25;
-    int size = num_pages_to_alloc * PTE_SZ;
+    
+    int size = num_pages_to_alloc * PGSIZE;
     char *mem = sbrk(size);
     if (mem == (char*)(-1)) {
         err("sbrk for 25 pages failed");
@@ -66,16 +68,18 @@ void ugetpid_test()
     testname = "ugetpid_test";
     printf(1, "\nugetpid_test: starting\n");
 
-    for (i = 0; i < 5; i++) {
+    for (i = 0; i < 30; i++) {
         int pid = fork();
         if (pid < 0) {
             err("fork failed");
         }
-        if (pid == 0) {
-            exit(0);
+        else if (pid == 0) {
+          if (getpid() != ugetpid())
+            err("missmatched PID");
+          exit(0);
+        } else {
+          wait();
         }
-
-        wait();
     }
     printf(1, "ugetpid_test: OK\n");
 }

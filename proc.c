@@ -7,6 +7,7 @@
 #include "proc.h"
 #include "spinlock.h"
 #include "pstat.h"
+#include "usyscall.h"
 
 #define RAND_MAX 0x7fffffff
 uint rseed = 0;
@@ -85,6 +86,15 @@ static struct proc* allocproc(void)
         return 0;
     }
 
+    // allocate the usyscall page
+    if((p->usyscall = (struct usyscall*)alloc_page()) == 0){
+        // if alloc_page fails!
+        free_page(p->kstack);
+        p->kstack = 0;
+        p->state = UNUSED;
+        return 0;
+    }
+
     sp = p->kstack + KSTACKSIZE;
 
     // Leave room for trap frame.
@@ -149,6 +159,10 @@ void userinit(void)
     p->sz = PTE_SZ;
     // set the number of syscalls
     p->nsyscalls = 0;
+
+    // map the usyscall page and set the PID. AP_KUR gives user read-only access.
+    mappages(p->pgdir, (void*)USYSCALL, PTE_SZ, v2p(p->usyscall), AP_KUR);
+    p->usyscall->pid = p->pid;
 
     // craft the trapframe as if
     memset(p->tf, 0, sizeof(*p->tf));
@@ -222,6 +236,10 @@ int fork(void)
     np->nsyscalls = 0;
     // set the number of pickets of the child to be the same as the parent
     np->tickets = proc->tickets;
+
+    // map the usyscall page for the new process and set the PID.
+    mappages(np->pgdir, (void*)USYSCALL, PTE_SZ, v2p(np->usyscall), AP_KUR);
+    np->usyscall->pid = np->pid;
 
     // Clear r0 so that fork returns 0 in the child.
     np->tf->r0 = 0;
@@ -312,6 +330,7 @@ int wait(void)
                 pid = p->pid;
                 free_page(p->kstack);
                 p->kstack = 0;
+                p->usyscall = 0;
                 freevm(p->pgdir);
                 p->state = UNUSED;
                 p->pid = 0;
