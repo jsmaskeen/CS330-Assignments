@@ -5,7 +5,7 @@
 #include "mmu.h"
 
 #define N (8 * (1 << 20)) // 8 MiB // max 125 MiB works fails otherwise
-#define PGSIZE (1 << 12)  // user pages are 4KB in size
+#define PGSIZE (1 << PTE_SHIFT)  // user pages are 4KB in size
 
 void print_pt_test();
 void ugetpid_test();
