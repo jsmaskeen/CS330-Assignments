@@ -245,7 +245,8 @@ int allocuvm (pde_t *pgdir, uint oldsz, uint newsz)
         mem = alloc_page();
 
         if (mem == 0) {
-            cprintf("allocuvm out of memory\n");
+            // just dealloc the last page
+            cprintf("allocuvm out of memory\n"); // TODO: Fix this
             deallocuvm(pgdir, newsz, oldsz);
             return 0;
         }

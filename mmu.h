@@ -16,7 +16,7 @@
 
 
 // access permission for page directory/page table entries.
-#define AP_NA       0x00    // no access
+#define AP_NA       0x00    // no access					<------------------- we will use this as a invalid bit!
 #define AP_KO       0x01    // privilaged access, kernel: RW, user: no access
 #define AP_KUR      0x02    // no write access from user, read allowed
 #define AP_KU       0x03    // full access
