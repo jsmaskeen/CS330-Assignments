@@ -14,35 +14,35 @@ void err(char *why);
 
 int main(int argc, char *argv[])
 {
-  printf(1, "page_table_test: starting\n\n");
+    printf(1, "page_table_test: starting\n\n");
 
-  printf(1, "Initial Page Table\n");
-  print_pt_test(); 
+    printf(1, "Initial Page Table\n");
+    print_pt_test(); 
 
-  printf(1, "\nAllocating 25 pages\n");
-  int num_pages_to_alloc = 25;
-  int size = num_pages_to_alloc * PTE_SZ;
-  char *mem = sbrk(size);
-  if (mem == (char*)-1) {
-    err("sbrk for 25 pages failed");
-  }
-  printf(1, "Success!\n");
+    printf(1, "\nAllocating 25 pages\n");
+    int num_pages_to_alloc = 25;
+    int size = num_pages_to_alloc * PTE_SZ;
+    char *mem = sbrk(size);
+    if (mem == (char*)-1) {
+        err("sbrk for 25 pages failed");
+    }
+    printf(1, "Success!\n");
 
-  printf(1, "\nPage Table after allocating 25 pages\n");
-  print_pt_test(); 
+    printf(1, "\nPage Table after allocating 25 pages\n");
+    print_pt_test(); 
 
-  sbrk(-size);
-  printf(1, "Deallocated 25 pages\n");
+    sbrk(-size);
+    printf(1, "Deallocated 25 pages\n");
 
-  printf(1, "\nPage Table after deallocation\n");
-  print_pt_test();
+    printf(1, "\nPage Table after deallocation\n");
+    print_pt_test();
 
-  printf(1, "\nOther tests in original test.c\n");
-  ugetpid_test();
-  superpg_test();
-  print_kpt_test();
-  printf(1, "\npage_table_test: all tests succeeded\n");
-  exit(0);
+    printf(1, "\nOther tests in original test.c\n");
+    ugetpid_test();
+    superpg_test();
+    print_kpt_test();
+    printf(1, "\npage_table_test: all tests succeeded\n");
+    exit(0);
 }
 
 
@@ -50,40 +50,40 @@ char *testname = "";
 
 void err(char *why)
 {
-  printf(2, "page_table_test: %s failed: %s, pid=%d\n", testname, why, getpid());
-  exit(1);
+    printf(2, "page_table_test: %s failed: %s, pid=%d\n", testname, why, getpid());
+    exit(1);
 }
 
 void print_pt_test()
 {
-  testname = "print_pt_test";
-  pgdump();
+    testname = "print_pt_test";
+    pgdump();
 }
 
 void ugetpid_test()
 {
-  int i;
-  testname = "ugetpid_test";
-  printf(1, "\nugetpid_test: starting\n");
+    int i;
+    testname = "ugetpid_test";
+    printf(1, "\nugetpid_test: starting\n");
 
-  for (i = 0; i < 5; i++) {
-    int pid = fork();
-    if (pid < 0) {
-      err("fork failed");
-    }
-    if (pid == 0) {
-      exit(0);
-    }
+    for (i = 0; i < 5; i++) {
+        int pid = fork();
+        if (pid < 0) {
+            err("fork failed");
+        }
+        if (pid == 0) {
+            exit(0);
+        }
 
-    wait();
-  }
-  printf(1, "ugetpid_test: OK\n");
+        wait();
+    }
+    printf(1, "ugetpid_test: OK\n");
 }
 
 void print_kpt_test()
 {
-  testname = "print_kpt_test";
-  kpgdump();
+    testname = "print_kpt_test";
+    kpgdump();
 }
 
 
@@ -91,26 +91,26 @@ void print_kpt_test()
 // try to allocate 8 MiB of data
 void superpg_test()
 {
-  testname = "superpg_test";
-  printf(1, "\nsuperpg_test: starting\n");
+    testname = "superpg_test";
+    printf(1, "\nsuperpg_test: starting\n");
 
-  char *mem = sbrk(N);
-  if (mem == (char*)-1) {
-    err("sbrk failed to allocate large memory");
-  }
-
-  for (uint i = 0; i < N/2; i++) {
-    mem[i] = (char)(i % 256);
-    mem[N - 1 - i] = (char)(i % 256);
-  }
-
-  for (uint i = 0; i < N/2; i++) {
-    if (mem[i] != (char)(i % 256) || mem[N - 1 - i] != (char)(i % 256)) {
-      err("memory content mismatch");
+    char *mem = sbrk(N);
+    if (mem == (char*)-1) {
+        err("sbrk failed to allocate large memory");
     }
-  }
 
-  sbrk(-N);
+    for (uint i = 0; i < N/2; i++) {
+        mem[i] = (char)(i % 256);
+        mem[N - 1 - i] = (char)(i % 256);
+    }
 
-  printf(1, "superpg_test: OK\n");
+    for (uint i = 0; i < N/2; i++) {
+        if (mem[i] != (char)(i % 256) || mem[N - 1 - i] != (char)(i % 256)) {
+            err("memory content mismatch");
+        }
+    }
+
+    sbrk(-N);
+
+    printf(1, "superpg_test: OK\n");
 }
