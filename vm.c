@@ -138,7 +138,7 @@ int mappages (pde_t *pgdir, void *va, uint size, uint pa, int ap)
         if (*pte & PE_TYPES) {
             panic("remap");
         }
-        *pte = pa | ((ap & 0x3) << 4) | PE_CACHE | PE_BUF | PTE_TYPE;
+        *pte = pa | ((ap & 0x3) << 4) | PE_CACHE | PE_BUF | PTE_TYPE | PTE_E | PTE_V;
 
         if (a == last) {
             break;
@@ -192,6 +192,7 @@ void inituvm (pde_t *pgdir, char *init, uint sz)
 
     mem = alloc_page();
     memset(mem, 0, PTE_SZ);
+    // cprintf("mem in inituvm: %p\n", mem);
     mappages(pgdir, 0, PTE_SZ, v2p(mem), AP_KU);
     memmove(mem, init, sz);
     push_pg_queue(mem);
@@ -209,11 +210,13 @@ int loaduvm (pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
     }
 
     for (i = 0; i < sz; i += PTE_SZ) {
+        cprintf("Address for the code is: %p\n", addr + i);
         if ((pte = walkpgdir(pgdir, addr + i, 0)) == 0) {
             panic("loaduvm: address should exist");
         }
-        // TODO set the not evict flag
+        // cprintf("PTE ptr: %p\n", p2v(PTE_ADDR(*pte)));
 
+        *pte = (*pte & ~PTE_E); // don't evict the code page!!
         pa = PTE_ADDR(*pte);
 
         if (sz - i < PTE_SZ) {
@@ -233,29 +236,32 @@ int loaduvm (pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 // evicts the first page from the current process
 int evict_page(pde_t *pgdir) {
     // flush_tlb();
-    pte_t *pte;
+    // pte_t *pte;
     // uint pa;
 
-    while (1) {
-        cprintf("Trying to evict\n");
-        char* current_page_addr = pg_queue_front();
-        pop_pg_queue();
-        pte = walkpgdir(pgdir, current_page_addr, 0);
-        cprintf("Pointer returned: %p, Value: %d, Query Addr: %p\n", pte, *pte, current_page_addr);
-        if (pte == 0) 
-            continue;
+    // while (1) {
+    //     cprintf("Trying to evict\n");
+    //     char* current_page_addr = pg_queue_front();
+    //     pop_pg_queue();
+    //     // pde_t pde = pgdir[PDE_IDX(current_page_addr)];
+    //     // pte_t pte = pde_t;
+    //     pte = walkpgdir(pgdir, current_page_addr, 0);
+    //     cprintf("Pointer returned: %p, Value: %d, Query Addr: %p\n", pte, *pte, current_page_addr);
+    //     if (pte == 0 || pte & PTE_V != 0) 
+    //         continue;
+    //     cprintf("PTE %p points to: %p\n", pte, *pte);
+    //     // pa = PTE_ADDR(*pte);
 
-        // pa = PTE_ADDR(*pte);
+    //     // if (pa == 0) {
+    //     //     panic("deallocuvm");
+    //     // }
 
-        // if (pa == 0) {
-        //     panic("deallocuvm");
-        // }
-
-        free_page(current_page_addr);
-        cprintf("Evict sucess\n");
-        *pte = 0;
-        break;
-    }
+    //     free_page(current_page_addr);
+    //     cprintf("Evict sucess\n");
+    //     *pte = 0;
+    //     break;
+    // }
+    
 
     return 0;
 }

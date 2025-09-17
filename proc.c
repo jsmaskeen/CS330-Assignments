@@ -143,7 +143,9 @@ void push_pg_queue(char* pg_no) {
         // return;
     }
     // cprintf("\n\nPushing to the queue\n\n");
-    proc->pg_queue[(proc->pg_queue_tail + 1) % PG_QUEUE_SZ] = pg_no;
+    // pgdump1(proc->pgdir);
+    cprintf("Entry pushed to the queue: %p, PID: %d\n", P2V(pg_no), proc->pid);
+    proc->pg_queue[proc->pg_queue_tail] = pg_no;
     proc->pg_queue_tail++;
     proc->pg_queue_tail %= PG_QUEUE_SZ;
 }
@@ -662,6 +664,21 @@ void procdump(void)
         }
 
         cprintf("%d %s %s\n", p->pid, state, p->name);
+        cprintf(" --------- Pages/Page Table Entries -------- \n");
+        for (int i = 0; i < (1 << 8); i++) {
+            if (p->pgdir[i] == 0)
+                continue;
+            cprintf("PDE %d: %x, Pointer to this entry: %x\n", i, p->pgdir[i], &p->pgdir[i]);
+            if (p->pgdir[i] != 0) {
+                pte_t *pte = (pte_t*) p2v(PT_ADDR(p->pgdir[i]));
+                // this should point to the pgtable
+                for (int j = 0; j < (1 << 8); j++) {
+                    if (pte[j] == 0)
+                        continue;
+                    cprintf("    PTE %d: %x, Pointer to this entry: %x\n", j, (pte[j]), &pte[j]);
+                }
+            }
+        }
     }
 
     show_callstk("procdump: \n");
