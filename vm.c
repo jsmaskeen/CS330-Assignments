@@ -262,80 +262,88 @@ int evict_page(pde_t *pgdir) {
 
 // Allocate page tables and physical memory to grow process from oldsz to
 // newsz, which need not be page aligned.  Returns new size or 0 on error.
-int allocuvm (pde_t *pgdir, uint oldsz, uint newsz)
+
+int
+allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 {
-    char *mem;
-    uint a;
+  char *mem;
+  uint a;
 
-    if (newsz >= UADDR_SZ) {
-        return 0;
-    }
+  if(newsz >= UADDR_SZ)
+    return 0;
+  if(newsz < oldsz)
+    return oldsz;
 
-    if (newsz < oldsz) {
-        return oldsz;
-    }
-
-    a = align_up(oldsz, PTE_SZ);
-
-    for (; a < newsz; a += PTE_SZ) {
-        mem = alloc_page();
-        // cprintf("Mem: %p\n", mem);
-        if (mem == 0) {
-            // just dealloc the last page
-            cprintf("allocuvm out of memory\n"); // TODO: Fix this
-            evict_page(pgdir); // this will dealloc the page also
-            mem = alloc_page();
-            if (mem == 0) {
-                panic("Still no memory, wtf is going on?\n");
-                return -1;
-            }
-            // deallocuvm(pgdir, newsz, oldsz);
-            // cprintf("Mem: %p, newsz: %p, oldz: %p\n", mem, newsz, oldsz);
-            // return -1;
+  a = align_up(oldsz, PTE_SZ);
+  for(; a < newsz; a += PTE_SZ){
+    // Check if we can use a superpage
+    if((a % SUPERPAGE_SIZE == 0) && (newsz - a >= SUPERPAGE_SIZE)) {
+        mem = kmalloc(SUPERPAGE_SHIFT);
+        if(mem == 0){
+            cprintf("allocuvm: out of memory (superpage)\n");
+            deallocuvm(pgdir, newsz, oldsz);
+            return 0;
         }
-
+        memset(mem, 0, SUPERPAGE_SIZE);
+        // Map as a section (superpage)
+        pgdir[PDE_IDX(a)] = v2p(mem) | KPDE_TYPE | (AP_KU << 10);
+        a += SUPERPAGE_SIZE - PTE_SZ; // Move 'a' to the end of the superpage
+    } else {
+        mem = alloc_page();
+        if(mem == 0){
+            cprintf("allocuvm: out of memory\n");
+            deallocuvm(pgdir, newsz, oldsz);
+            return 0;
+        }
         memset(mem, 0, PTE_SZ);
-        mappages(pgdir, (char*) a, PTE_SZ, v2p(mem), AP_KU);
-        push_pg_queue((mem));
+        if(mappages(pgdir, (char*)a, PTE_SZ, v2p(mem), AP_KU) < 0){
+            cprintf("allocuvm: mappages failed\n");
+            free_page(mem);
+            deallocuvm(pgdir, newsz, oldsz);
+            return 0;
+        }
     }
-
-    return newsz;
+  }
+  return newsz;
 }
 
 // Deallocate user pages to bring the process size from oldsz to
 // newsz.  oldsz and newsz need not be page-aligned, nor does newsz
 // need to be less than oldsz.  oldsz can be larger than the actual
 // process size.  Returns the new process size.
-int deallocuvm (pde_t *pgdir, uint oldsz, uint newsz)
+
+int
+deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 {
     pte_t *pte;
-    uint a;
-    uint pa;
+    uint a, pa;
+    pde_t *pde;
 
-    if (newsz >= oldsz) {
+    if(newsz >= oldsz)
         return oldsz;
-    }
 
-    for (a = align_up(newsz, PTE_SZ); a < oldsz; a += PTE_SZ) {
-        pte = walkpgdir(pgdir, (char*) a, 0);
-
-        if (!pte) {
-            // pte == 0 --> no page table for this entry
-            // round it up to the next page directory
-            a = align_up (a, PDE_SZ);
-
-        } else if ((*pte & PE_TYPES) != 0) {
-            pa = PTE_ADDR(*pte);
-
-            if (pa == 0) {
-                panic("deallocuvm");
+    a = align_up(newsz, PTE_SZ);
+    for(; a  < oldsz; a += PTE_SZ){
+        pde = &pgdir[PDE_IDX(a)];
+        if(*pde & KPDE_TYPE){ // It's a superpage
+            pa = PTE_ADDR(*pde);
+            if(pa == 0)
+                panic("deallocuvm: superpage");
+            kfree(p2v(pa), SUPERPAGE_SHIFT);
+            *pde = 0;
+            a += SUPERPAGE_SIZE - PTE_SZ;
+        } else {
+            if((pte = walkpgdir(pgdir, (char*)a, 0)) != 0){
+                if((*pte & PTE_TYPE) != 0){
+                    pa = PTE_ADDR(*pte);
+                    if(pa == 0)
+                        panic("deallocuvm");
+                    free_page(p2v(pa));
+                    *pte = 0;
+                }
             }
-
-            free_page(p2v(pa));
-            *pte = 0;
         }
     }
-
     return newsz;
 }
 
@@ -381,49 +389,48 @@ void clearpteu (pde_t *pgdir, char *uva)
 
 // Given a parent process's page table, create a copy
 // of it for a child.
-pde_t* copyuvm (pde_t *pgdir, uint sz)
+
+pde_t*
+copyuvm(pde_t *pgdir, uint sz)
 {
     pde_t *d;
     pte_t *pte;
     uint pa, i, ap;
     char *mem;
+    pde_t *pde;
 
-    // allocate a new first level page directory
-    d = kpt_alloc();
-    if (d == NULL ) {
-        return NULL ;
-    }
+    if((d = kpt_alloc()) == 0)
+        return 0;
 
-    // copy the whole address space over (no COW)
-    for (i = 0; i < sz; i += PTE_SZ) {
-        if(i == USYSCALL){
-            // Don't copy the parent's usyscall page cause child will get its own in fork().
-            continue;
-        }
-        if ((pte = walkpgdir(pgdir, (void *) i, 0)) == 0) {
-            panic("copyuvm: pte should exist");
-        }
+    for(i = 0; i < sz; i += PTE_SZ){
+        pde = &pgdir[PDE_IDX(i)];
+        if(*pde & KPDE_TYPE){ // Superpage
+            pa = PTE_ADDR(*pde);
+            ap = (*pde >> 10) & 0x3;
+            if((mem = kmalloc(SUPERPAGE_SHIFT)) == 0)
+                goto bad;
+            memmove(mem, (char*)p2v(pa), SUPERPAGE_SIZE);
+            d[PDE_IDX(i)] = v2p(mem) | KPDE_TYPE | (ap << 10);
+            i += SUPERPAGE_SIZE - PTE_SZ;
 
-        if (!(*pte & PE_TYPES)) {
-            panic("copyuvm: page not present");
-        }
-
-        pa = PTE_ADDR (*pte);
-        ap = PTE_AP (*pte);
-
-        if ((mem = alloc_page()) == 0) {
-            goto bad;
-        }
-
-        memmove(mem, (char*) p2v(pa), PTE_SZ);
-
-        if (mappages(d, (void*) i, PTE_SZ, v2p(mem), ap) < 0) {
-            goto bad;
+        } else {
+            if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
+                panic("copyuvm: pte should exist");
+            if(!(*pte & PTE_TYPE))
+                panic("copyuvm: page not present");
+            pa = PTE_ADDR(*pte);
+            ap = PTE_AP(*pte);
+            if((mem = alloc_page()) == 0)
+                goto bad;
+            memmove(mem, (char*)p2v(pa), PTE_SZ);
+            if(mappages(d, (void*)i, PTE_SZ, v2p(mem), ap) < 0)
+                goto bad;
         }
     }
     return d;
 
-bad: freevm(d);
+bad:
+    freevm(d);
     return 0;
 }
 

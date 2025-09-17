@@ -15,7 +15,7 @@
 // free blocks (for each order), thus allowing fast allocation. There is
 // about 8% overhead (maximum) for this structure.
 
-#define MAX_ORD      12
+#define MAX_ORD      20 // maximum order, block size 1MB (for superpage support)
 #define MIN_ORD      6
 #define N_ORD        (MAX_ORD - MIN_ORD +1)
 

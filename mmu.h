@@ -14,6 +14,10 @@
 // 1MB page mapping. User pages use 4K pages.
 //
 
+// SUPERPAGE DEFINITIONS
+#define SUPERPAGE_SIZE (1024 * 1024)
+#define SUPERPAGE_SHIFT 20
+#define SUPERPAGE_MASK (SUPERPAGE_SIZE - 1)
 
 // access permission for page directory/page table entries.
 #define AP_NA       0x00    // no access					<------------------- we will use this as a invalid bit!
