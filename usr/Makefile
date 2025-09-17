@@ -31,7 +31,6 @@ UPROGS=\
 	_pgtable_test\
 	_test_demand_paging\
 
-
 all: $(FS_IMAGE)
 
 _%: %.o $(ULIB)

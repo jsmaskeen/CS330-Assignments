@@ -44,7 +44,7 @@ main(int argc, char **argv)
     num_pages_to_alloc = 40000;
     int size = num_pages_to_alloc * PGSIZE;
 
-	printf(1, "Size trying to alloc is: %d MB\n", (size / (1 << 20)));
+  	printf(1, "Size trying to alloc is: %d MB\n", (size / (1 << 20)));
 
     printf(1, "-----------------------------------\n\n\n\nAllocating %d pages\n", num_pages_to_alloc);
     
@@ -52,9 +52,8 @@ main(int argc, char **argv)
 
     printf(1, "Allocated Successfully!\n Page Table after allocation:\n");
     print_pt_test();
-
-	printf(1, "Test is done running now exiting\n");
-	// sbrk(-size);
-	// sbrk(-old_size);
+    printf(1, "Test is done running now exiting\n");
+    // sbrk(-size);
+    // sbrk(-old_size);
     exit(0);
 }
