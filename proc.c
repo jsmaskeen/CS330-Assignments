@@ -130,38 +130,11 @@ static struct proc* allocproc(void)
     // initially the process has not consumed any ticks
     p->runticks = 0;
 
-    p->pg_queue_head = 0;
-    p->pg_queue_tail = 0;
-    memset(p->pg_queue, -1, sizeof(p->pg_queue));
+    // p->pg_queue_head = 0;
+    // p->pg_queue_tail = 0;
+    // memset(p->pg_queue, -1, sizeof(p->pg_queue));
 
     return p;
-}
-
-void push_pg_queue(char* pg_no) {
-    if ((proc->pg_queue_tail + 1) % PG_QUEUE_SZ == proc->pg_queue_head) {
-        // panic("page queue size is full\n");
-        // return;
-    }
-    // cprintf("\n\nPushing to the queue\n\n");
-    proc->pg_queue[(proc->pg_queue_tail + 1) % PG_QUEUE_SZ] = pg_no;
-    proc->pg_queue_tail++;
-    proc->pg_queue_tail %= PG_QUEUE_SZ;
-}
-
-void pop_pg_queue() {
-    if (proc->pg_queue_head == proc->pg_queue_tail) {
-        panic("page queue is empty nothing to remove\n");
-        return;
-    }
-    proc->pg_queue_head++;
-    proc->pg_queue_head %= PG_QUEUE_SZ;
-}
-
-char* pg_queue_front() {
-    if (proc->pg_queue_head == proc->pg_queue_tail) {
-        panic("no element in front of the page queue\n");
-    }
-    return proc->pg_queue[proc->pg_queue_head];
 }
 
 void error_init ()
@@ -272,12 +245,12 @@ int fork(void)
     mappages(np->pgdir, (void*)USYSCALL, PTE_SZ, v2p(np->usyscall), AP_KUR);
     np->usyscall->pid = np->pid;
 
-    np->pg_queue_head = proc->pg_queue_head;
-    np->pg_queue_tail = proc->pg_queue_tail;
+    // np->pg_queue_head = proc->pg_queue_head;
+    // np->pg_queue_tail = proc->pg_queue_tail;
     
-    for (int i = np->pg_queue_head; i < np->pg_queue_tail; i++) {
-        np->pg_queue[i] = proc->pg_queue[i];
-    }
+    // for (int i = np->pg_queue_head; i < np->pg_queue_tail; i++) {
+    //     np->pg_queue[i] = proc->pg_queue[i];
+    // }
 
     // Clear r0 so that fork returns 0 in the child.
     np->tf->r0 = 0;
@@ -662,6 +635,21 @@ void procdump(void)
         }
 
         cprintf("%d %s %s\n", p->pid, state, p->name);
+        cprintf(" --------- Pages/Page Table Entries -------- \n");
+        for (int i = 0; i < (1 << 8); i++) {
+            if (p->pgdir[i] == 0)
+                continue;
+            cprintf("PDE %d: %x, Pointer to this entry: %x\n", i, p->pgdir[i], &p->pgdir[i]);
+            if (p->pgdir[i] != 0) {
+                pte_t *pte = (pte_t*) p2v(PT_ADDR(p->pgdir[i]));
+                // this should point to the pgtable
+                for (int j = 0; j < (1 << 8); j++) {
+                    if (pte[j] == 0)
+                        continue;
+                    cprintf("    PTE %d: %x, Pointer to this entry: %x\n", j, (pte[j]), &pte[j]);
+                }
+            }
+        }
     }
 
     show_callstk("procdump: \n");
