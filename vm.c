@@ -12,8 +12,8 @@
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
 
-#define PG_QUEUE_SZ 20000 // 128 mb / pg_size = 128 mb / 4 kb = 32000
-#define MAX_PROC_PAGES 20
+#define PG_QUEUE_SZ 40000 // 128 mb / pg_size = 128 mb / 4 kb = 32000
+#define MAX_PROC_PAGES 20000
 // Xv6 can only allocate memory in 4KB blocks. This is fine
 // for x86. ARM's page table and page directory (for 28-bit
 // user address) have a size of 1KB. kpt_alloc/free is used
@@ -302,8 +302,7 @@ int evict_page(pde_t *pgdir) {
 // newsz, which need not be page aligned.  Returns new size or 0 on error.
 
 int
-allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
-{
+allocuvm(pde_t *pgdir, uint oldsz, uint newsz) {
   char *mem;
   uint a;
 
@@ -360,8 +359,9 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 
     // cprintf("Trying to get the first element in the queue: %x\n", *(pte_t *)page_queue.pg_queue[1]);
 
-    return newsz;
+}
     // return min(10000, (newsz + PTE_SZ - 1) / PTE_SZ) * PTE_SZ;
+    return newsz;
 }
 
 // Deallocate user pages to bring the process size from oldsz to
@@ -369,9 +369,7 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 // need to be less than oldsz.  oldsz can be larger than the actual
 // process size.  Returns the new process size.
 
-int
-deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
-{
+int deallocuvm(pde_t *pgdir, uint oldsz, uint newsz) {
     pte_t *pte;
     uint a, pa;
     pde_t *pde;
@@ -380,25 +378,28 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
         return oldsz;
 
     a = align_up(newsz, PTE_SZ);
-    for(; a  < oldsz; a += PTE_SZ){
+    for(; a < oldsz; a += PTE_SZ) {
         pde = &pgdir[PDE_IDX(a)];
-        if((*pde & 0x3) == KPDE_TYPE){ // It's a superpage
+
+        if ((*pde & 0x3) == KPDE_TYPE) { // It's a superpage
             pa = SUPERPAGE_ADDR(*pde);
-            if(pa == 0)
+            if (pa == 0) {
                 panic("deallocuvm: superpage");
+            }
             kfree(p2v(pa), SUPERPAGE_SHIFT);
             *pde = 0;
             a += SUPERPAGE_SIZE - PTE_SZ;
         } else {
-            if((pte = walkpgdir(pgdir, (char*)a, 0)) != 0){
-                if((*pte & PTE_TYPE) != 0){
+            if ((pte = walkpgdir(pgdir, (char*)a, 0)) != 0) {
+                if ((*pte & PTE_TYPE) != 0) {
                     if ((*pte & PTE_V) == 0) { // don't evict the page if it is not valid
                         *pte = 0;
                         continue;
                     }
                     pa = PTE_ADDR(*pte);
-                    if(pa == 0)
+                    if (pa == 0) {
                         panic("deallocuvm");
+                    }
                     free_page(p2v(pa));
                     *pte = 0;
                 }

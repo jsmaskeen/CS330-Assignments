@@ -41,7 +41,7 @@ main(int argc, char **argv)
     printf(1, "\nPage Table after allocating 25 pages\n");
     print_pt_test();
     
-    num_pages_to_alloc = 40;
+    num_pages_to_alloc = 40000;
     int size = num_pages_to_alloc * PGSIZE;
 
 	printf(1, "Size trying to alloc is: %d MB\n", (size / (1 << 20)));
