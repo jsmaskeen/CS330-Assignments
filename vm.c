@@ -9,12 +9,10 @@
 #include "elf.h"
 #include "usyscall.h"
 
-extern void push_pg_queue(char *);
-extern void pop_pg_queue();
-extern char* pg_queue_front();
-
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
+
+#define PG_QUEUE_SZ 32000 // 128 mb / pg_size = 128 mb / 4 kb = 32000
 
 // Xv6 can only allocate memory in 4KB blocks. This is fine
 // for x86. ARM's page table and page directory (for 28-bit
@@ -31,10 +29,18 @@ struct {
     struct run *freelist;
 } kpt_mem;
 
+struct {
+    int pg_queue_head;           // position where to add the next element in the queue
+    int pg_queue_tail;           // position where to add the next element in the queue
+    char* pg_queue[PG_QUEUE_SZ];   // the queue which holds the next page to evict
+} page_queue;
+
 void init_vmm (void)
 {
     initlock(&kpt_mem.lock, "vm");
     kpt_mem.freelist = NULL;
+    page_queue.pg_queue_head = 0;
+    page_queue.pg_queue_tail = 0;
 }
 
 static void _kpt_free (char *v)
@@ -87,6 +93,33 @@ void* kpt_alloc (void)
 
     memset(r, 0, PT_SZ);
     return (char*) r;
+}
+
+void push_pg_queue(char* pg_no) {
+    if ((page_queue.pg_queue_tail + 1) % PG_QUEUE_SZ == page_queue.pg_queue_head) {
+        panic("page queue size is full\n");
+        return;
+    }
+    cprintf("Entry pushed to the queue: %p, PID: %d\n", P2V(pg_no), proc->pid);
+    page_queue.pg_queue[page_queue.pg_queue_tail] = pg_no;
+    page_queue.pg_queue_tail++;
+    page_queue.pg_queue_tail %= PG_QUEUE_SZ;
+}
+
+void pop_pg_queue() {
+    if (page_queue.pg_queue_head == page_queue.pg_queue_tail) {
+        panic("page queue is empty nothing to remove\n");
+        return;
+    }
+    page_queue.pg_queue_head++;
+    page_queue.pg_queue_head %= PG_QUEUE_SZ;
+}
+
+char* pg_queue_front() {
+    if (page_queue.pg_queue_head == page_queue.pg_queue_tail) {
+        panic("no element in front of the page queue\n");
+    }
+    return page_queue.pg_queue[page_queue.pg_queue_head];
 }
 
 // Return the address of the PTE in page directory that corresponds to
