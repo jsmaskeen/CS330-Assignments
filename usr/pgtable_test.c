@@ -59,7 +59,7 @@ void err(char *why)
 void print_pt_test()
 {
     testname = "print_pt_test";
-    pgdump();
+    pgdump(0);
 }
 
 void ugetpid_test()
@@ -121,7 +121,7 @@ void superpg_test()
             err("memory content mismatch");
         }
     }
-    pgdump();
+    pgdump(0);
 
     int pid = fork();
 

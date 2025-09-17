@@ -12,7 +12,7 @@ char *testname = "";
 void print_pt_test()
 {
     testname = "print_pt_test";
-    pgdump();
+    pgdump(1);
 }
 
 void ugetpid_test();

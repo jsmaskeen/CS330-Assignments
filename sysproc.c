@@ -204,7 +204,11 @@ int sys_settickets(void) {
 }
 
 int sys_pgdump(void) {
-    pgdump1(proc->pgdir);
+    int print_full;
+    if(argint(0, &print_full) < 0) {
+        return -1;
+    }
+    pgdump1(proc->pgdir,print_full);
     return 0;
 }
 

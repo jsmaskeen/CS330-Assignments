@@ -639,7 +639,7 @@ void paging_init(uint phy_low, uint phy_hi)
     flush_tlb();
 }
 
-void pgdump1(pde_t *pgdir)
+void pgdump1(pde_t *pgdir, int print_full)
 {
     cprintf("page_dump: starting for PID %d (size: 0x%x)\n", proc->pid, proc->sz);
     int printed_top_ten = 0;
@@ -674,12 +674,12 @@ void pgdump1(pde_t *pgdir)
 
     for (uint i = 0; i < proc->sz;)
     {
-        if (printed_top_ten == 0 && counter < 10)
+        if (printed_top_ten == 0 && counter < 10 && print_full == 0)
         {
             cprintf("Top 10 pages:\n");
             printed_top_ten = 1;
         }
-        if (printed_bottom_ten == 0 && counter > 10)
+        if (printed_bottom_ten == 0 && counter > 10 && print_full == 0)
         {
             cprintf("Bottom 10 pages:\n");
             printed_bottom_ten = 1;
@@ -689,7 +689,7 @@ void pgdump1(pde_t *pgdir)
         {
             if ((*pde & 0x3) == KPDE_TYPE)
             { // It's a superpage
-                if (counter < 10 || counter > totl_pages - 10)
+                if (counter < 10 || counter > totl_pages - 10 || print_full == 1)
                 {
                     cprintf("va 0x%x, pa 0x%x, flags 0x%x (SUPERPAGE)\n", i, SUPERPAGE_ADDR(*pde), *pde & 0xFFF);
                 }
@@ -704,7 +704,7 @@ void pgdump1(pde_t *pgdir)
                 pte_t *pte = walkpgdir(pgdir, (void *)i, 0);
                 if (pte && (*pte & PE_TYPES))
                 {
-                    if (counter < 10 || counter > totl_pages - 10)
+                    if (counter < 10 || counter > totl_pages - 10 || print_full == 1)
                     {
                         cprintf("va 0x%x, pa 0x%x, flags 0x%x\n", i, PTE_ADDR(*pte), *pte & 0xFFF);
                     }
