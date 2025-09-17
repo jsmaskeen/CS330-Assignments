@@ -115,3 +115,5 @@ Below is the result of a run of the test.
 <img width="641" height="409" alt="Screenshot from 2025-09-17 23-35-18" src="https://github.com/user-attachments/assets/6ac982a7-0452-4051-b0e3-9f214f9dd943" />
 
 The above images show two different virtual addresses being mapped to the same physical address. Also notice that only one of them is valid since the previous one is evicted.
+
+Note : For simplicity we do not evict superpages i.e the evictable flag for superpages is FALSE.
