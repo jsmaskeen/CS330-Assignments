@@ -4,7 +4,7 @@
 #include "param.h"
 #include "mmu.h"
 
-#define N (125 * (1 << 20)) + (1 << 19) // 8 MiB // max 125 MiB works fails otherwise
+#define N ((32 * (1 << 20))) // 32 MiB // max 125 MiB works fails otherwise
 #define PGSIZE (1 << PTE_SHIFT)  // user pages are 4KB in size
 
 void print_pt_test();
@@ -113,8 +113,26 @@ void superpg_test()
             err("memory content mismatch");
         }
     }
+    pgdump();
 
+    int pid = fork();
+
+    if (pid < 0 ){
+        err("fork failed");
+    } else if (pid == 0) {
+        for (uint i = 0; i < N/2; i++) {
+        if (mem[i] != (char)(i % 256) || mem[N - 1 - i] != (char)(i % 256)) {
+            err("memory content mismatch");
+            }
+        }
+        printf(1, "superpagetest ok [child]\n");
+        exit(0);
+    }
+     else {
+    wait();
     sbrk(-N);
-
     printf(1, "superpg_test: OK\n");
+    }
+    // free the memory
+    
 }

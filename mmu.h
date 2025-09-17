@@ -33,7 +33,8 @@
 
 #define PE_CACHE    (1 << 3)// cachable
 #define PE_BUF      (1 << 2)// bufferable
-#define PTE_V      (1 << 7) // Valid bit
+#define PTE_V       (1 << 7) // Valid bit (Is this page already evicted?)
+#define PTE_E		(1 << 8) // Can we evict this page? (Don't evict code pages)
 
 #define PE_TYPES    0x03    // mask for page type
 #define KPDE_TYPE   0x02    // use "section" type for kernel page directory
@@ -51,6 +52,7 @@
 #define PTE_IDX(v)  (((uint)(v) >> PTE_SHIFT) & (NUM_PTE - 1))
 #define PTE_SZ      (1 << PTE_SHIFT)
 #define PTE_ADDR(v) align_dn (v, PTE_SZ)
+#define SUPERPAGE_ADDR(pde) align_dn(pde, SUPERPAGE_SIZE)
 #define PTE_AP(pte) (((pte) >> 4) & 0x03)
 
 // size of two-level page tables
