@@ -12,7 +12,7 @@
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
 
-#define PG_QUEUE_SZ 32000 // 128 mb / pg_size = 128 mb / 4 kb = 32000
+#define PG_QUEUE_SZ 33000 // 128 mb / pg_size = 128 mb / 4 kb = 32000
 
 // Xv6 can only allocate memory in 4KB blocks. This is fine
 // for x86. ARM's page table and page directory (for 28-bit
@@ -51,7 +51,6 @@ static void _kpt_free (char *v)
     r->next = kpt_mem.freelist;
     kpt_mem.freelist = r;
 }
-
 
 static void kpt_free (char *v)
 {
@@ -100,7 +99,7 @@ void push_pg_queue(char* pg_no) {
         panic("page queue size is full\n");
         return;
     }
-    cprintf("Entry pushed to the queue: %p, PID: %d\n", P2V(pg_no), proc->pid);
+    // cprintf("Entry pushed to the queue: %p, PID: %d\n", pg_no, proc->pid);
     page_queue.pg_queue[page_queue.pg_queue_tail] = pg_no;
     page_queue.pg_queue_tail++;
     page_queue.pg_queue_tail %= PG_QUEUE_SZ;
@@ -171,7 +170,7 @@ int mappages (pde_t *pgdir, void *va, uint size, uint pa, int ap)
         if (*pte & PE_TYPES) {
             panic("remap");
         }
-        *pte = pa | ((ap & 0x3) << 4) | PE_CACHE | PE_BUF | PTE_TYPE | PTE_E | PTE_V;
+        *pte = pa | ((ap & 0x3) << 4) | PE_CACHE | PE_BUF | PTE_TYPE | PTE_E | PTE_V; // set the correct flags
 
         if (a == last) {
             break;
@@ -228,7 +227,8 @@ void inituvm (pde_t *pgdir, char *init, uint sz)
     // cprintf("mem in inituvm: %p\n", mem);
     mappages(pgdir, 0, PTE_SZ, v2p(mem), AP_KU);
     memmove(mem, init, sz);
-    push_pg_queue(mem);
+    // cprintf("Pointer to the pte: %x\n", walkpgdir(pgdir, 0, 0));
+    push_pg_queue((char *) walkpgdir(pgdir, 0, 0));
 }
 
 // Load a program segment into pgdir.  addr must be page-aligned
@@ -243,7 +243,7 @@ int loaduvm (pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
     }
 
     for (i = 0; i < sz; i += PTE_SZ) {
-        cprintf("Address for the code is: %p\n", addr + i);
+        // cprintf("Address for the code is: %p\n", addr + i);
         if ((pte = walkpgdir(pgdir, addr + i, 0)) == 0) {
             panic("loaduvm: address should exist");
         }
@@ -269,33 +269,27 @@ int loaduvm (pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 // evicts the first page from the current process
 int evict_page(pde_t *pgdir) {
     // flush_tlb();
-    // pte_t *pte;
-    // uint pa;
+    pte_t *pte;
+    uint pa;
 
-    // while (1) {
-    //     cprintf("Trying to evict\n");
-    //     char* current_page_addr = pg_queue_front();
-    //     pop_pg_queue();
-    //     // pde_t pde = pgdir[PDE_IDX(current_page_addr)];
-    //     // pte_t pte = pde_t;
-    //     pte = walkpgdir(pgdir, current_page_addr, 0);
-    //     cprintf("Pointer returned: %p, Value: %d, Query Addr: %p\n", pte, *pte, current_page_addr);
-    //     if (pte == 0 || pte & PTE_V != 0) 
-    //         continue;
-    //     cprintf("PTE %p points to: %p\n", pte, *pte);
-    //     // pa = PTE_ADDR(*pte);
-
-    //     // if (pa == 0) {
-    //     //     panic("deallocuvm");
-    //     // }
-
-    //     free_page(current_page_addr);
-    //     cprintf("Evict sucess\n");
-    //     *pte = 0;
-    //     break;
-    // }
+    while (1) {
+        // cprintf("Trying to evict\n");
+        char* current_page_addr = pg_queue_front();
+        pop_pg_queue();
+        pte = (pte_t *) current_page_addr;
+        if (pte == 0 || *pte == 0 || (*pte & PTE_E) == 0 || (*pte & PTE_V) == 0)
+            continue;
+        pa = PTE_ADDR(*pte);
+        if (pa == 0) {
+            panic("Something went wrong");
+        }
+        free_page(p2v(pa));
+        *pte = (*pte & ~PTE_V); // no longer valid
+        // cprintf("Evict sucess");
+        break;
+    }
+    flush_tlb();
     
-
     return 0;
 }
 
@@ -318,6 +312,7 @@ int allocuvm (pde_t *pgdir, uint oldsz, uint newsz)
 
     for (; a < newsz; a += PTE_SZ) {
         mem = alloc_page();
+
         // cprintf("Mem: %p\n", mem);
         if (mem == 0) {
             // just dealloc the last page
@@ -335,8 +330,11 @@ int allocuvm (pde_t *pgdir, uint oldsz, uint newsz)
 
         memset(mem, 0, PTE_SZ);
         mappages(pgdir, (char*) a, PTE_SZ, v2p(mem), AP_KU);
-        push_pg_queue((mem));
+        // cprintf("Pointer to the pte: %x\n", walkpgdir(pgdir, (void *)a, 0));
+        push_pg_queue((char *) walkpgdir(pgdir, (void *)a, 0));
     }
+
+    // cprintf("Trying to get the first element in the queue: %x\n", *(pte_t *)page_queue.pg_queue[1]);
 
     return newsz;
 }

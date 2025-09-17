@@ -4,7 +4,7 @@
 #include "param.h"
 #include "mmu.h"
 
-#define N (126 * (1 << 20)) // 8 MiB // max 125 MiB works fails otherwise
+#define N (8 * (1 << 20)) // 8 MiB // max 125 MiB works fails otherwise
 #define PGSIZE (1 << PTE_SHIFT)  // user pages are 4KB in size
 
 void print_pt_test();
@@ -103,18 +103,18 @@ void superpg_test()
         err("sbrk failed to allocate large memory");
     }
     // write test
-    // for (uint i = 0; i < N/2; i++) {
-    //     mem[i] = (char)(i % 256);
-    //     mem[N - 1 - i] = (char)(i % 256);
-    // }
+    for (uint i = 0; i < N/2; i++) {
+        mem[i] = (char)(i % 256);
+        mem[N - 1 - i] = (char)(i % 256);
+    }
     // read test
-    // for (uint i = 0; i < N/2; i++) {
-    //     if (mem[i] != (char)(i % 256) || mem[N - 1 - i] != (char)(i % 256)) {
-    //         err("memory content mismatch");
-    //     }
-    // }
+    for (uint i = 0; i < N/2; i++) {
+        if (mem[i] != (char)(i % 256) || mem[N - 1 - i] != (char)(i % 256)) {
+            err("memory content mismatch");
+        }
+    }
 
-    // sbrk(-N);
+    sbrk(-N);
 
     printf(1, "superpg_test: OK\n");
 }
