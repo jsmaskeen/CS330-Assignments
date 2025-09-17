@@ -307,6 +307,7 @@ int evict_page(pde_t *pgdir)
 {
     // flush_tlb();
     pte_t *pte;
+    pde_t *pde; // for superpages
     uint pa;
 
     while (1)
@@ -314,17 +315,36 @@ int evict_page(pde_t *pgdir)
         // cprintf("Trying to evict\n");
         char *current_page_addr = pg_queue_front();
         pop_pg_queue();
-        pte = (pte_t *)current_page_addr;
-        if (pte == 0 || *pte == 0 || (*pte & PTE_E) == 0 || (*pte & PTE_V) == 0)
-            continue;
-        pa = PTE_ADDR(*pte);
-        if (pa == 0)
-        {
-            panic("Something went wrong");
+        if (((*current_page_addr & 0x3) == KPDE_TYPE)) {
+            pde = (pde_t *)current_page_addr;
+            if (pde == 0 || *pde == 0 || (*pde & PTE_E) == 0 || (*pde & PTE_V) == 0) {
+                continue;
+            }
+
+            pa = SUPERPAGE_ADDR(*pde);
+            if (pa == 0)
+            {
+                panic("deallocuvm: superpage");
+            }
+            kfree(p2v(pa), SUPERPAGE_SHIFT);
+            *pde = 0;
+
+            break;
+        } else {
+            pte = (pte_t *)current_page_addr;
+            if (pte == 0 || *pte == 0 || (*pte & PTE_E) == 0 || (*pte & PTE_V) == 0) {
+                continue;
+            }
+            
+            pa = PTE_ADDR(*pte);
+            if (pa == 0)
+            {
+                panic("Something went wrong");
+            }
+            free_page(p2v(pa));
+            *pte = (*pte & ~PTE_V); // no longer valid
+            // cprintf("Evict sucess");
         }
-        free_page(p2v(pa));
-        *pte = (*pte & ~PTE_V); // no longer valid
-        // cprintf("Evict sucess");
         break;
     }
     flush_tlb();
@@ -360,8 +380,9 @@ int allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
             }
             memset(mem, 0, SUPERPAGE_SIZE);
             // Map as a section (superpage)
-            pgdir[PDE_IDX(a)] = v2p(mem) | KPDE_TYPE | (AP_KU << 10);
+            pgdir[PDE_IDX(a)] = v2p(mem) | KPDE_TYPE | (AP_KU << 10) | PTE_V | PTE_E;
             a += SUPERPAGE_SIZE - PTE_SZ; // Move 'a' to the end of the superpage
+            push_pg_queue((char *) &pgdir[PDE_IDX(a)]);
         }
         else
         {
@@ -385,7 +406,7 @@ int allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
                 // cprintf("Mem: %p, newsz: %p, oldz: %p\n", mem, newsz, oldsz);
                 // return -1;
             }
-        next:;
+        next:
             memset(mem, 0, PTE_SZ);
             // mappages(pgdir, (char*) a, PTE_SZ, v2p(mem), AP_KU);
             if (mappages(pgdir, (char *)a, PTE_SZ, v2p(mem), AP_KU) < 0)
@@ -426,6 +447,10 @@ int deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 
         if ((*pde & 0x3) == KPDE_TYPE)
         { // It's a superpage
+            if ((*pte & PTE_V) == 0) {
+                *pte = 0;
+                continue;
+            }
             pa = SUPERPAGE_ADDR(*pde);
             if (pa == 0)
             {
