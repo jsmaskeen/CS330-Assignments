@@ -51,6 +51,7 @@
 #define PTE_IDX(v)  (((uint)(v) >> PTE_SHIFT) & (NUM_PTE - 1))
 #define PTE_SZ      (1 << PTE_SHIFT)
 #define PTE_ADDR(v) align_dn (v, PTE_SZ)
+#define SUPERPAGE_ADDR(pde) align_dn(pde, SUPERPAGE_SIZE)
 #define PTE_AP(pte) (((pte) >> 4) & 0x03)
 
 // size of two-level page tables
