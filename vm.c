@@ -691,7 +691,7 @@ void pgdump1(pde_t *pgdir, int print_full)
             { // It's a superpage
                 if (counter < 10 || counter > totl_pages - 10 || print_full == 1)
                 {
-                    cprintf("va 0x%x, pa 0x%x, flags 0x%x (SUPERPAGE)\n", i, SUPERPAGE_ADDR(*pde), *pde & 0xFFF);
+                    cprintf("va 0x%x, pa 0x%x, flags 0x%x (SUPERPAGE) Valid: %d\n", i, SUPERPAGE_ADDR(*pde), *pde & 0xFFF, (*pde & PTE_V)!=0);
                 }
                 i += SUPERPAGE_SIZE;
                 counter++;
@@ -706,7 +706,7 @@ void pgdump1(pde_t *pgdir, int print_full)
                 {
                     if (counter < 10 || counter > totl_pages - 10 || print_full == 1)
                     {
-                        cprintf("va 0x%x, pa 0x%x, flags 0x%x\n", i, PTE_ADDR(*pte), *pte & 0xFFF);
+                        cprintf("va 0x%x, pa 0x%x, flags 0x%x             Valid: %d\n", i, PTE_ADDR(*pte), *pte & 0xFFF, (*pte & PTE_V)!=0);
                     }
 
                     counter++;
