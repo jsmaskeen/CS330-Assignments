@@ -1,5 +1,52 @@
 ## Task 1 : Page Dump and Super pages
 
+## Implementation of `pdgump` and `kpgdump`
+
+We implement two syscalls, `pgdump(int print_full)` and `kpgdump()`.
+
+The `print_full` parameter if set to `1`, prints the full page table for the current process.
+If it is set to `0`, then only the top 10 and the bottom 10 pages are printed.
+
+
+<img src="https://i.ibb.co/M58ggqkV/image.png" alt="image" border="0">
+
+How does it work ?
+
+We traverse the pagetable of the current running process and print each page table entry (or the page directory entry incase it is a superpage). The printed lines include the virtual address, the physical address, the flags, and if the page is valid or not.
+
+Kernel page dump works in a similar manner, only difference is that the kernel entries start from the address `KERNBASE`.
+
+<img src="https://i.ibb.co/ycZVpLWD/image.png" alt="image" border="0">
+
+
+## Implementing `ugetpid` syscall
+
+In the starte xv6, user processes obtain their process ID (PID) via a system call (`getpid`). While functional, this requires a context switch into the kernel each time, which is expensive. 
+
+To reduce this overhead, ugetpid is implemented, which allows processes to read their PID directly from a shared, read-only page mapped into their address space [But this is a read only page that the kernel maintains].
+
+This page `struct usyscall` contains information that the user program can read without invoking a syscall. Currently, the only exposed field is the process ID (pid).
+
+We add this field in the `proc` struct.
+
+Here are the things which happens to make this work:
+
+- In `allocproc()` we allocate a page for usyscall.
+- In `userinit()` and `fork()` we map the page at USYSCALL and set pid.
+- In `wait()` we free the page when process exits.
+- We also modify `copyuvm()` to skip copying the parent's usyscall page, since the child gets its own fresh one.
+
+We have a user level call in `ulib.c`, as follows:
+
+```
+int ugetpid(void) {
+  struct usyscall *u = (struct usyscall *)USYSCALL;
+  return u->pid;
+}
+```
+
+The test file `usr/pgtable_test.c` has the test for this usyscall.
+
 # Superpages in xv6
 Superpages are a memory management feature that allows the operating system to manage larger blocks of memory more efficiently. Instead of using standard page sizes (typically 4KB), superpages use larger page sizes (such as 1MB or 2MB), which can reduce the overhead associated with managing many small pages.
 
