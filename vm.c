@@ -12,8 +12,8 @@
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
 
-#define PG_QUEUE_SZ 33000 // 128 mb / pg_size = 128 mb / 4 kb = 32000
-
+#define PG_QUEUE_SZ 20000 // 128 mb / pg_size = 128 mb / 4 kb = 32000
+#define MAX_PROC_PAGES 20
 // Xv6 can only allocate memory in 4KB blocks. This is fine
 // for x86. ARM's page table and page directory (for 28-bit
 // user address) have a size of 1KB. kpt_alloc/free is used
@@ -314,10 +314,13 @@ int allocuvm (pde_t *pgdir, uint oldsz, uint newsz)
         mem = alloc_page();
 
         // cprintf("Mem: %p\n", mem);
-        if (mem == 0) {
+        if (mem == 0 || a >= MAX_PROC_PAGES * PTE_SZ) {
             // just dealloc the last page
-            cprintf("allocuvm out of memory\n"); // TODO: Fix this
-            evict_page(pgdir); // this will dealloc the page also
+            // cprintf("allocuvm out of memory\n"); // TODO: Fix this
+            evict_page(pgdir); // this will dealloc the page also and make it invalid
+            if (mem != 0) 
+                goto next;
+
             mem = alloc_page();
             if (mem == 0) {
                 panic("Still no memory, wtf is going on?\n");
@@ -327,7 +330,7 @@ int allocuvm (pde_t *pgdir, uint oldsz, uint newsz)
             // cprintf("Mem: %p, newsz: %p, oldz: %p\n", mem, newsz, oldsz);
             // return -1;
         }
-
+    next:;
         memset(mem, 0, PTE_SZ);
         mappages(pgdir, (char*) a, PTE_SZ, v2p(mem), AP_KU);
         // cprintf("Pointer to the pte: %x\n", walkpgdir(pgdir, (void *)a, 0));
@@ -337,6 +340,7 @@ int allocuvm (pde_t *pgdir, uint oldsz, uint newsz)
     // cprintf("Trying to get the first element in the queue: %x\n", *(pte_t *)page_queue.pg_queue[1]);
 
     return newsz;
+    // return min(10000, (newsz + PTE_SZ - 1) / PTE_SZ) * PTE_SZ;
 }
 
 // Deallocate user pages to bring the process size from oldsz to
@@ -355,13 +359,16 @@ int deallocuvm (pde_t *pgdir, uint oldsz, uint newsz)
 
     for (a = align_up(newsz, PTE_SZ); a < oldsz; a += PTE_SZ) {
         pte = walkpgdir(pgdir, (char*) a, 0);
-
         if (!pte) {
             // pte == 0 --> no page table for this entry
             // round it up to the next page directory
             a = align_up (a, PDE_SZ);
 
         } else if ((*pte & PE_TYPES) != 0) {
+            if ((*pte & PTE_V) == 0) { // don't evict the page if it is not valid
+                *pte = 0;
+                continue;
+            }
             pa = PTE_ADDR(*pte);
 
             if (pa == 0) {
@@ -540,11 +547,11 @@ void pgdump1(pde_t *pgdir)
     cprintf("page_dump: starting for PID %d (size: 0x%x)\n", proc->pid, proc_size);
     cprintf("Top 10 pages:\n");
                 //  proc_size // for full ptable
-    for (i = 0; i < 10*PTE_SZ; i += PTE_SZ) {
+    for (i = 0; i < proc_size; i += PTE_SZ) {
         pte = walkpgdir(pgdir, (void *)i, 0);
         // PTE is valid and present
         if (pte && (*pte & PE_TYPES)) {
-            cprintf("va 0x%x, pa 0x%x, flags 0x%x\n", i, PTE_ADDR(*pte), *pte & 0xFFF);
+            cprintf("va 0x%x, pa 0x%x, flags 0x%x, valid: %x\n", i, PTE_ADDR(*pte), *pte & 0xFFF, (int)((*pte & PTE_V) != 0));
         }
     }
 
