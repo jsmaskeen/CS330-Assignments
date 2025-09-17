@@ -29,7 +29,7 @@ UPROGS=\
 	_prop_test\
 	_boost_test\
 	_pgtable_test\
-
+	_test_demand_paging\
 
 all: $(FS_IMAGE)
 
