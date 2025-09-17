@@ -13,7 +13,7 @@ extern char data[]; // defined by kernel.ld
 pde_t *kpgdir;      // for use in scheduler()
 
 #define PG_QUEUE_SZ 40000 // 128 mb / pg_size = 128 mb / 4 kb = 32000
-#define MAX_PROC_PAGES 20000
+#define MAX_PROC_PAGES 100
 // Xv6 can only allocate memory in 4KB blocks. This is fine
 // for x86. ARM's page table and page directory (for 28-bit
 // user address) have a size of 1KB. kpt_alloc/free is used
@@ -307,7 +307,6 @@ int evict_page(pde_t *pgdir)
 {
     // flush_tlb();
     pte_t *pte;
-    pde_t *pde; // for superpages
     uint pa;
 
     while (1)
@@ -315,36 +314,19 @@ int evict_page(pde_t *pgdir)
         // cprintf("Trying to evict\n");
         char *current_page_addr = pg_queue_front();
         pop_pg_queue();
-        if (((*current_page_addr & 0x3) == KPDE_TYPE)) {
-            pde = (pde_t *)current_page_addr;
-            if (pde == 0 || *pde == 0 || (*pde & PTE_E) == 0 || (*pde & PTE_V) == 0) {
-                continue;
-            }
-
-            pa = SUPERPAGE_ADDR(*pde);
-            if (pa == 0)
-            {
-                panic("deallocuvm: superpage");
-            }
-            kfree(p2v(pa), SUPERPAGE_SHIFT);
-            *pde = 0;
-
-            break;
-        } else {
-            pte = (pte_t *)current_page_addr;
-            if (pte == 0 || *pte == 0 || (*pte & PTE_E) == 0 || (*pte & PTE_V) == 0) {
-                continue;
-            }
-            
-            pa = PTE_ADDR(*pte);
-            if (pa == 0)
-            {
-                panic("Something went wrong");
-            }
-            free_page(p2v(pa));
-            *pte = (*pte & ~PTE_V); // no longer valid
-            // cprintf("Evict sucess");
+        pte = (pte_t *)current_page_addr;
+        if (pte == 0 || *pte == 0 || (*pte & PTE_E) == 0 || (*pte & PTE_V) == 0) {
+            continue;
         }
+        
+        pa = PTE_ADDR(*pte);
+        if (pa == 0)
+        {
+            panic("Something went wrong");
+        }
+        free_page(p2v(pa));
+        *pte = (*pte & ~PTE_V); // no longer valid
+        // cprintf("Evict sucess");
         break;
     }
     flush_tlb();
@@ -382,7 +364,7 @@ int allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
             // Map as a section (superpage)
             pgdir[PDE_IDX(a)] = v2p(mem) | KPDE_TYPE | (AP_KU << 10) | PTE_V | PTE_E;
             a += SUPERPAGE_SIZE - PTE_SZ; // Move 'a' to the end of the superpage
-            push_pg_queue((char *) &pgdir[PDE_IDX(a)]);
+            // push_pg_queue((char *) &pgdir[PDE_IDX(a)]);
         }
         else
         {
