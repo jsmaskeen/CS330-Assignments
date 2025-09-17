@@ -44,7 +44,7 @@ We implement a minimal version of on-demand-paging. Usually on-demand paging inv
 
 We make sure to not evict any important pages for processes, for example the page where the code segment is stored.
 
-For demonstration purposes, we let any given process allocate atmost `20k` pages. 
+For demonstration purposes, we let any given process can have atmost `20k` pages in memory at a given time. 
 
 We also add a two new flags to the page table entry:
 * EVICTABLE (PTE_E) : Indicates that this page is non important and can be evicted to allocate another page
