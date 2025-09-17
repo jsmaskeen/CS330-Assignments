@@ -1,12 +1,13 @@
-Assignment 3
+# Assignment 3
+
+## Read docs @ [`docs/assignment_3.md`](docs/assignment_3.md)
 
 ### Task 1 
 Original test.c [`./usr/original_test.c`](./usr/original_test.c)
 Modified test.c [`./usr/pgtable_test.c`](./usr/pgtable_test.c)
 
 ### Task 2
-
-@Karan
+Edited many files. pls read docs 😭
 
 ---
 
@@ -120,3 +121,4 @@ console        3 17 0
 $
 ```
 This demonstrates a successful boot, shell launch, and file system access.
+
