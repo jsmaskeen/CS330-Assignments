@@ -33,7 +33,7 @@ int get_procnsyscalls(int pid);
 int getpinfo(struct pstat* pstat);
 void srand(int seed);
 int settickets(int pid, int n_tickets);
-int pgdump(void);
+int pgdump(int print_full);
 int kpgdump(void);
 // ulib.c
 int stat(char*, struct stat*);
