@@ -13,7 +13,7 @@ extern char data[]; // defined by kernel.ld
 pde_t *kpgdir;      // for use in scheduler()
 
 #define PG_QUEUE_SZ 40000 // 128 mb / pg_size = 128 mb / 4 kb = 32000
-#define MAX_PROC_PAGES 100
+#define MAX_PROC_PAGES 10000
 // Xv6 can only allocate memory in 4KB blocks. This is fine
 // for x86. ARM's page table and page directory (for 28-bit
 // user address) have a size of 1KB. kpt_alloc/free is used
@@ -351,7 +351,7 @@ int allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
     for (; a < newsz; a += PTE_SZ)
     {
         // Check if we can use a superpage
-        if ((a % SUPERPAGE_SIZE == 0) && (newsz - a >= SUPERPAGE_SIZE))
+        if ((a % SUPERPAGE_SIZE == 0) && (newsz - a >= SUPERPAGE_SIZE) && a < MAX_PROC_PAGES * PTE_SZ)
         {
             mem = kmalloc(SUPERPAGE_SHIFT);
             if (mem == 0)

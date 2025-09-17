@@ -54,6 +54,7 @@ int main(int argc, char **argv)
 
     printf(1, "Allocated Successfully!\n Page Table after allocation:\n");
     print_pt_test();
+    pgdump(1);
     printf(1, "Test is done running now exiting\n");
     // sbrk(-size);
     // sbrk(-old_size);
