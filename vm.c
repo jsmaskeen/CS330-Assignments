@@ -127,13 +127,18 @@ static pte_t* walkpgdir (pde_t *pgdir, const void *va, int alloc)
 {
     pde_t *pde;
     pte_t *pgtab;
-
+    
     // pgdir points to the page directory, get the page direcotry entry (pde)
     pde = &pgdir[PDE_IDX(va)];
 
-    if (*pde & PE_TYPES) {
-        pgtab = (pte_t*) p2v(PT_ADDR(*pde));
+    // If the entry is a superpage (section), there's no L2 page table.
+    // Return 0 because there is no PTE to be found.
+    if ((*pde & 0x3) == KPDE_TYPE) {
+        return 0;
+    }
 
+    if(*pde & UPDE_TYPE){
+        pgtab = (pte_t*)p2v(PT_ADDR(*pde));
     } else {
         if (!alloc || (pgtab = (pte_t*) kpt_alloc()) == 0) {
             return 0;
@@ -295,24 +300,34 @@ int evict_page(pde_t *pgdir) {
 
 // Allocate page tables and physical memory to grow process from oldsz to
 // newsz, which need not be page aligned.  Returns new size or 0 on error.
-int allocuvm (pde_t *pgdir, uint oldsz, uint newsz)
+
+int
+allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 {
-    char *mem;
-    uint a;
+  char *mem;
+  uint a;
 
-    if (newsz >= UADDR_SZ) {
-        return 0;
-    }
+  if(newsz >= UADDR_SZ)
+    return 0;
+  if(newsz < oldsz)
+    return oldsz;
 
-    if (newsz < oldsz) {
-        return oldsz;
-    }
-
-    a = align_up(oldsz, PTE_SZ);
-
-    for (; a < newsz; a += PTE_SZ) {
+  a = align_up(oldsz, PTE_SZ);
+  for(; a < newsz; a += PTE_SZ){
+    // Check if we can use a superpage
+    if((a % SUPERPAGE_SIZE == 0) && (newsz - a >= SUPERPAGE_SIZE)) {
+        mem = kmalloc(SUPERPAGE_SHIFT);
+        if(mem == 0){
+            cprintf("allocuvm: out of memory (superpage)\n");
+            deallocuvm(pgdir, newsz, oldsz);
+            return 0;
+        }
+        memset(mem, 0, SUPERPAGE_SIZE);
+        // Map as a section (superpage)
+        pgdir[PDE_IDX(a)] = v2p(mem) | KPDE_TYPE | (AP_KU << 10);
+        a += SUPERPAGE_SIZE - PTE_SZ; // Move 'a' to the end of the superpage
+    } else {
         mem = alloc_page();
-
         // cprintf("Mem: %p\n", mem);
         if (mem == 0 || a >= MAX_PROC_PAGES * PTE_SZ) {
             // just dealloc the last page
@@ -332,7 +347,13 @@ int allocuvm (pde_t *pgdir, uint oldsz, uint newsz)
         }
     next:;
         memset(mem, 0, PTE_SZ);
-        mappages(pgdir, (char*) a, PTE_SZ, v2p(mem), AP_KU);
+        // mappages(pgdir, (char*) a, PTE_SZ, v2p(mem), AP_KU);
+        if(mappages(pgdir, (char*)a, PTE_SZ, v2p(mem), AP_KU) < 0){
+            cprintf("allocuvm: mappages failed\n");
+            free_page(mem);
+            deallocuvm(pgdir, newsz, oldsz);
+            return 0;
+        }
         // cprintf("Pointer to the pte: %x\n", walkpgdir(pgdir, (void *)a, 0));
         push_pg_queue((char *) walkpgdir(pgdir, (void *)a, 0));
     }
@@ -347,39 +368,43 @@ int allocuvm (pde_t *pgdir, uint oldsz, uint newsz)
 // newsz.  oldsz and newsz need not be page-aligned, nor does newsz
 // need to be less than oldsz.  oldsz can be larger than the actual
 // process size.  Returns the new process size.
-int deallocuvm (pde_t *pgdir, uint oldsz, uint newsz)
+
+int
+deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 {
     pte_t *pte;
-    uint a;
-    uint pa;
+    uint a, pa;
+    pde_t *pde;
 
-    if (newsz >= oldsz) {
+    if(newsz >= oldsz)
         return oldsz;
-    }
 
-    for (a = align_up(newsz, PTE_SZ); a < oldsz; a += PTE_SZ) {
-        pte = walkpgdir(pgdir, (char*) a, 0);
-        if (!pte) {
-            // pte == 0 --> no page table for this entry
-            // round it up to the next page directory
-            a = align_up (a, PDE_SZ);
-
-        } else if ((*pte & PE_TYPES) != 0) {
-            if ((*pte & PTE_V) == 0) { // don't evict the page if it is not valid
-                *pte = 0;
-                continue;
+    a = align_up(newsz, PTE_SZ);
+    for(; a  < oldsz; a += PTE_SZ){
+        pde = &pgdir[PDE_IDX(a)];
+        if((*pde & 0x3) == KPDE_TYPE){ // It's a superpage
+            pa = SUPERPAGE_ADDR(*pde);
+            if(pa == 0)
+                panic("deallocuvm: superpage");
+            kfree(p2v(pa), SUPERPAGE_SHIFT);
+            *pde = 0;
+            a += SUPERPAGE_SIZE - PTE_SZ;
+        } else {
+            if((pte = walkpgdir(pgdir, (char*)a, 0)) != 0){
+                if((*pte & PTE_TYPE) != 0){
+                    if ((*pte & PTE_V) == 0) { // don't evict the page if it is not valid
+                        *pte = 0;
+                        continue;
+                    }
+                    pa = PTE_ADDR(*pte);
+                    if(pa == 0)
+                        panic("deallocuvm");
+                    free_page(p2v(pa));
+                    *pte = 0;
+                }
             }
-            pa = PTE_ADDR(*pte);
-
-            if (pa == 0) {
-                panic("deallocuvm");
-            }
-
-            free_page(p2v(pa));
-            *pte = 0;
         }
     }
-
     return newsz;
 }
 
@@ -425,49 +450,48 @@ void clearpteu (pde_t *pgdir, char *uva)
 
 // Given a parent process's page table, create a copy
 // of it for a child.
-pde_t* copyuvm (pde_t *pgdir, uint sz)
+
+pde_t*
+copyuvm(pde_t *pgdir, uint sz)
 {
     pde_t *d;
     pte_t *pte;
     uint pa, i, ap;
     char *mem;
+    pde_t *pde;
 
-    // allocate a new first level page directory
-    d = kpt_alloc();
-    if (d == NULL ) {
-        return NULL ;
-    }
+    if((d = kpt_alloc()) == 0)
+        return 0;
 
-    // copy the whole address space over (no COW)
-    for (i = 0; i < sz; i += PTE_SZ) {
-        if(i == USYSCALL){
-            // Don't copy the parent's usyscall page cause child will get its own in fork().
-            continue;
-        }
-        if ((pte = walkpgdir(pgdir, (void *) i, 0)) == 0) {
-            panic("copyuvm: pte should exist");
-        }
+    for(i = 0; i < sz; i += PTE_SZ){
+        pde = &pgdir[PDE_IDX(i)];
+        if((*pde & 0x3) == KPDE_TYPE){ // Superpage
+            pa = SUPERPAGE_ADDR(*pde);
+            ap = (*pde >> 10) & 0x3;
+            if((mem = kmalloc(SUPERPAGE_SHIFT)) == 0)
+                goto bad;
+            memmove(mem, (char*)p2v(pa), SUPERPAGE_SIZE);
+            d[PDE_IDX(i)] = v2p(mem) | KPDE_TYPE | (ap << 10);
+            i += SUPERPAGE_SIZE - PTE_SZ;
 
-        if (!(*pte & PE_TYPES)) {
-            panic("copyuvm: page not present");
-        }
-
-        pa = PTE_ADDR (*pte);
-        ap = PTE_AP (*pte);
-
-        if ((mem = alloc_page()) == 0) {
-            goto bad;
-        }
-
-        memmove(mem, (char*) p2v(pa), PTE_SZ);
-
-        if (mappages(d, (void*) i, PTE_SZ, v2p(mem), ap) < 0) {
-            goto bad;
+        } else {
+            if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
+                panic("copyuvm: pte should exist");
+            if(!(*pte & PTE_TYPE))
+                panic("copyuvm: page not present");
+            pa = PTE_ADDR(*pte);
+            ap = PTE_AP(*pte);
+            if((mem = alloc_page()) == 0)
+                goto bad;
+            memmove(mem, (char*)p2v(pa), PTE_SZ);
+            if(mappages(d, (void*)i, PTE_SZ, v2p(mem), ap) < 0)
+                goto bad;
         }
     }
     return d;
 
-bad: freevm(d);
+bad:
+    freevm(d);
     return 0;
 }
 
@@ -475,21 +499,36 @@ bad: freevm(d);
 // Map user virtual address to kernel address.
 char* uva2ka (pde_t *pgdir, char *uva)
 {
+    pde_t *pde;
     pte_t *pte;
+    uint pa;
 
+    pde = &pgdir[PDE_IDX(uva)];
+
+    // Check if the PDE points to a superpage
+    if ((*pde & 0x3) == KPDE_TYPE) {
+        // Ensure user has access
+        if (((*pde >> 10) & 0x3) != AP_KU)
+            return 0;
+        
+        // The PDE contains the base address of the 1MB physical page.
+        // We add the offset from the virtual address to get the final physical address.
+        pa = SUPERPAGE_ADDR(*pde) + ((uint)uva & SUPERPAGE_MASK);
+        return (char*)p2v(pa);
+    }
+
+    // If not a superpage, it must be a page table.
+    // Proceed with the logic for 4KB pages.
     pte = walkpgdir(pgdir, uva, 0);
-
-    // make sure it exists
-    if ((*pte & PE_TYPES) == 0) {
+    if(pte == 0 || (*pte & PE_TYPES) == 0)
         return 0;
-    }
-
-    // make sure it is a user page
-    if (PTE_AP(*pte) != AP_KU) {
+    if(PTE_AP(*pte) != AP_KU)
         return 0;
-    }
-
-    return (char*) p2v(PTE_ADDR(*pte));
+    
+    // The PTE contains the base address of the 4KB physical page.
+    // We add the offset from the virtual address to get the final physical address.
+    pa = PTE_ADDR(*pte) + ((uint)uva & (PTE_SZ - 1));
+    return (char*)p2v(pa);
 }
 
 // Copy len bytes from p to user address va in page table pgdir.
@@ -503,7 +542,7 @@ int copyout (pde_t *pgdir, uint va, void *p, uint len)
     buf = (char*) p;
 
     while (len > 0) {
-        va0 = align_dn(va, PTE_SZ);
+        va0 = align_dn(va, PTE_SZ); 
         pa0 = uva2ka(pgdir, (char*) va0);
 
         if (pa0 == 0) {
@@ -515,7 +554,7 @@ int copyout (pde_t *pgdir, uint va, void *p, uint len)
         if (n > len) {
             n = len;
         }
-
+        
         memmove(pa0 + (va - va0), buf, n);
 
         len -= n;
@@ -541,38 +580,61 @@ void paging_init (uint phy_low, uint phy_hi)
 
 void pgdump1(pde_t *pgdir)
 {
-    pte_t *pte;
-    uint i;
-    uint proc_size = proc->sz;
-    cprintf("page_dump: starting for PID %d (size: 0x%x)\n", proc->pid, proc_size);
-    cprintf("Top 10 pages:\n");
-                //  proc_size // for full ptable
-    for (i = 0; i < proc_size; i += PTE_SZ) {
-        pte = walkpgdir(pgdir, (void *)i, 0);
-        // PTE is valid and present
-        if (pte && (*pte & PE_TYPES)) {
-            cprintf("va 0x%x, pa 0x%x, flags 0x%x, valid: %x\n", i, PTE_ADDR(*pte), *pte & 0xFFF, (int)((*pte & PTE_V) != 0));
+    cprintf("page_dump: starting for PID %d (size: 0x%x)\n", proc->pid, proc->sz);
+    int printed_top_ten = 0;
+    int printed_bottom_ten = 0;
+    int counter = 0;
+    int totl_pages = 0;
+
+    for (uint i = 0; i < proc->sz; ) {
+        pde_t *pde = &pgdir[PDE_IDX(i)];
+        if (*pde & PE_TYPES) {
+            if ((*pde & 0x3) == KPDE_TYPE) { // It's a superpage
+                i += SUPERPAGE_SIZE;
+                totl_pages++;
+                if (i < align_up(i, SUPERPAGE_SIZE)) i = align_up(i, SUPERPAGE_SIZE);
+                continue;
+            } else { // It's a page table
+                pte_t *pte = walkpgdir(pgdir, (void *)i, 0);
+                 if (pte && (*pte & PE_TYPES)) {
+                 totl_pages++;
+                }
+            }
         }
+        i += PTE_SZ;
     }
 
-    cprintf("Bottom 10 pages (without exceeding process size):\n");
-    uint start_va;
-    // start_va is the top of the bottom ten pages in the page tabel.
-    if (proc_size > 10 * PTE_SZ) {
-        start_va = proc_size - (10 * PTE_SZ);
-    } else {
-        start_va = 0;
-    }
-
-    // align start_va to nearest page boundary
-    start_va = align_dn(start_va, PTE_SZ);
-
-    for (i = start_va; i < proc_size; i += PTE_SZ) {
-        pte = walkpgdir(pgdir, (void *)i, 0);
-        if (pte && (*pte & PE_TYPES)) {
-            cprintf("va 0x%x, pa 0x%x, flags 0x%x\n", i, PTE_ADDR(*pte), *pte & 0xFFF);
+    for (uint i = 0; i < proc->sz; ) {
+        if (printed_top_ten == 0 && counter < 10){
+            cprintf("Top 10 pages:\n");
+            printed_top_ten = 1;
         }
-
+        if (printed_bottom_ten == 0 && counter > 10){
+            cprintf("Bottom 10 pages:\n");
+            printed_bottom_ten = 1;
+        }
+        pde_t *pde = &pgdir[PDE_IDX(i)];
+        if (*pde & PE_TYPES) {
+            if ((*pde & 0x3) == KPDE_TYPE) { // It's a superpage
+                if (counter < 10 || counter > totl_pages - 10){
+                cprintf("va 0x%x, pa 0x%x, flags 0x%x (SUPERPAGE)\n", i, SUPERPAGE_ADDR(*pde), *pde & 0xFFF);
+                }
+                i += SUPERPAGE_SIZE;
+                counter++;
+                if (i < align_up(i, SUPERPAGE_SIZE)) i = align_up(i, SUPERPAGE_SIZE);
+                continue;
+            } else { // It's a page table
+                pte_t *pte = walkpgdir(pgdir, (void *)i, 0);
+                 if (pte && (*pte & PE_TYPES)) {
+                    if (counter < 10 || counter >totl_pages - 10 ){
+                        cprintf("va 0x%x, pa 0x%x, flags 0x%x\n", i, PTE_ADDR(*pte), *pte & 0xFFF);
+                    }
+                    
+                 counter++;
+                }
+            }
+        }
+        i += PTE_SZ;
     }
     cprintf("page_dump: OK\n");
 }

@@ -4,6 +4,7 @@
         "user.h": "c",
         "memlayout.h": "c",
         "mmu.h": "c",
-        "param.h": "c"
+        "param.h": "c",
+        "types.h": "c"
     }
 }

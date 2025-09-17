@@ -14,6 +14,10 @@
 // 1MB page mapping. User pages use 4K pages.
 //
 
+// SUPERPAGE DEFINITIONS
+#define SUPERPAGE_SIZE (1024 * 1024)
+#define SUPERPAGE_SHIFT 20
+#define SUPERPAGE_MASK (SUPERPAGE_SIZE - 1)
 
 // access permission for page directory/page table entries.
 #define AP_NA       0x00    // no access					<------------------- we will use this as a invalid bit!
@@ -48,6 +52,7 @@
 #define PTE_IDX(v)  (((uint)(v) >> PTE_SHIFT) & (NUM_PTE - 1))
 #define PTE_SZ      (1 << PTE_SHIFT)
 #define PTE_ADDR(v) align_dn (v, PTE_SZ)
+#define SUPERPAGE_ADDR(pde) align_dn(pde, SUPERPAGE_SIZE)
 #define PTE_AP(pte) (((pte) >> 4) & 0x03)
 
 // size of two-level page tables
