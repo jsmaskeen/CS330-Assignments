@@ -1,6 +1,7 @@
 name: Update docs from highest assignment branch
 
 on:
+  workflow_dispatch: 
   push:
     branches:
       - 'assignment-*'
