@@ -30,6 +30,15 @@ UPROGS=\
 	_boost_test\
 	_pgtable_test\
 	_test_demand_paging\
+	_t_barrier\
+	_t_l_cv1\
+	_t_l_cv2\
+	_t_lock\
+	_t_sem1\
+	_t_sem2\
+	_t_sleepwake\
+	_t_threads\
+	_t_waitpid\
 
 all: $(FS_IMAGE)
 

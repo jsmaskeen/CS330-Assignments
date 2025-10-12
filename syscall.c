@@ -127,6 +127,19 @@ extern int sys_settickets(void);
 extern int sys_pgdump(void);
 extern int sys_kpgdump(void);
 
+////////////// New addition //////////////////
+extern int sys_thread_create(void);
+extern int sys_thread_exit(void);
+extern int sys_thread_join(void);
+extern int sys_waitpid(void);
+extern int sys_barrier_init(void);
+extern int sys_barrier_check(void);
+extern int sys_sleepChan(void);
+extern int sys_getChannel(void);
+extern int sys_sigChan(void);
+extern int sys_sigOneChan(void);
+///////////// End of new addition /////////////
+
 static int (*syscalls[])(void) = {
         [SYS_fork]              sys_fork,
         [SYS_exit]              sys_exit,
@@ -161,6 +174,20 @@ static int (*syscalls[])(void) = {
         [SYS_settickets]        sys_settickets,
         [SYS_pgdump]            sys_pgdump,
         [SYS_kpgdump]           sys_kpgdump,
+///////////////// New addition /////////////////
+        [SYS_thread_create]     sys_thread_create,
+        [SYS_thread_exit]       sys_thread_exit,
+        [SYS_thread_join]       sys_thread_join,
+        [SYS_waitpid]           sys_waitpid,
+        [SYS_barrier_init]      sys_barrier_init,
+        [SYS_barrier_check]     sys_barrier_check,
+//////////////// End of new addition ///////////
+/////////// Final parts of threads lab/////////
+        [SYS_sleepChan]         sys_sleepChan,
+        [SYS_getChannel]        sys_getChannel,
+        [SYS_sigChan]           sys_sigChan,
+        [SYS_sigOneChan]        sys_sigOneChan,
+/////////// End of final parts of threads lab/////////  
 };
 
 void syscall(void)
@@ -169,6 +196,8 @@ void syscall(void)
     int ret;
 
     num = proc->tf->r0;
+    
+    //cprintf ("syscall(%d) from %s(%d)\n", num, proc->name, proc->pid);
 
     if((num > 0) && (num <= NELEM(syscalls)) && syscalls[num]) {
         ret = syscalls[num]();

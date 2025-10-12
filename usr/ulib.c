@@ -151,3 +151,45 @@ ugetpid(void)
   return u->pid;
   // return u->pid + 1; // @karan try uncommenting this see how pftable_test will fail at ugetpid
 }
+
+
+
+void initiateLock(struct lock* l) {
+
+}
+
+void acquireLock(struct lock* l) {
+
+}
+
+void releaseLock(struct lock* l) {
+
+}
+
+void initiateCondVar(struct condvar* cv) {
+
+}
+
+void condWait(struct condvar* cv, struct lock* l) {
+
+}
+
+void broadcast(struct condvar* cv) {
+
+}
+
+void signal(struct condvar* cv) {
+
+}
+
+void semInit(struct semaphore* s, int initVal) {
+
+}
+
+void semUp(struct semaphore* s) {
+
+}
+
+void semDown(struct semaphore* s) {
+    
+}

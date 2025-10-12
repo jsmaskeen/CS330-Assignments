@@ -32,6 +32,7 @@ OBJS = \
 	trap_asm.o\
 	trap.o\
 	vm.o \
+	barrier.o\
 	\
 	device/picirq.o \
 	device/timer.o \
