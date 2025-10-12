@@ -29,8 +29,11 @@ jobs:
 
     - name: Copy docs from highest assignment branch
       run: |
-        # get docs from highest assignment branch into main
-        git checkout ${{ steps.get_branch.outputs.branch }} -- docs
+        # fetch the remote branch to ensure it exists locally
+        git fetch origin ${{ steps.get_branch.outputs.branch }}:refs/remotes/origin/${{ steps.get_branch.outputs.branch }}
+        
+        # copy docs folder from remote branch into main
+        git checkout origin/${{ steps.get_branch.outputs.branch }} -- docs
 
     - name: Commit and push changes
       run: |
