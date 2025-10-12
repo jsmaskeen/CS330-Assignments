@@ -2,6 +2,9 @@ name: Update docs from highest assignment branch
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - 'assignment-*'
 
 jobs:
   copy-docs:
@@ -12,6 +15,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0  # fetch all branches
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Get highest assignment branch
       id: get_branch
