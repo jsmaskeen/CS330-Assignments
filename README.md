@@ -1,5 +1,6 @@
 # Assignment 4
 
+Docs: [`docs/assignment_4.md`](./docs/assignment_4.md)
 
 ---
 

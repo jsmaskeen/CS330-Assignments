@@ -5,20 +5,36 @@
 #include "defs.h"
 #include "barrier.h"
 
-//define any variables needed here
+// define any variables needed here
+static struct spinlock barrierlock;
+static int barrier_N;
+static int barrier_counter;
+static int barrier_isinit = 0;
 
-int
-barrier_init(int n)
+int barrier_init(int n)
 {
-  //to be done
-  return 0;
+    if (!barrier_isinit)
+    {
+        initlock(&barrierlock, "barrier lock");
+        barrier_isinit = 1;
+    }
+    acquire(&barrierlock);
+    barrier_N = n;
+    barrier_counter = 0;
+    release(&barrierlock);
+    return 0;
 }
 
-int
-barrier_check(void)
+int barrier_check(void)
 {
-  //to be done
-  return 0;
+    acquire(&barrierlock);
+    barrier_counter++;
+    if (barrier_counter < barrier_N)
+        sleep(&barrier_counter, &barrierlock);
+    else
+        wakeup(&barrier_counter);
+    release(&barrierlock);
+    return 0;
 }
 
 /*----------xv6 sync lock end----------*/
