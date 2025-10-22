@@ -242,10 +242,17 @@ int sys_kpgdump(void)
     return 0;
 }
 
-//// New code goes here
 int sys_thread_create(void)
 {
-    return -1;
+    char* tid_ptr;
+    char* function_ptr;
+    char* args;
+
+    if (argptr(0, &tid_ptr, 8) < 0 || argptr(1, &function_ptr, 8) < 0 || argptr(1, &args, 8)) {
+        return -1;
+    }
+
+    return thread_create((int *) tid_ptr, function_ptr, args);
 }
 
 int sys_thread_exit(void)

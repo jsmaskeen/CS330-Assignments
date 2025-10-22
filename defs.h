@@ -146,7 +146,7 @@ int 						get_procstate(int);
 int 						get_pinfo(struct pstat *);
 void 						srand(uint);
 int 						settickets(int, int);
-
+int 						thread_create(int*, char*, char*);
 // swtch.S
 void            swtch(struct context**, struct context*);
 

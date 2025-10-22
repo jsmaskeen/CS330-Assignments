@@ -165,8 +165,10 @@ void userinit(void)
     p->nsyscalls = 0;
 
     // map the usyscall page and set the PID. AP_KUR gives user read-only access.
+    // cprintf("HERE\n");
     mappages(p->pgdir, (void*)USYSCALL, PTE_SZ, v2p(p->usyscall), AP_KUR);
     p->usyscall->pid = p->pid;
+    // cprintf("HERE Done\n");
 
     // craft the trapframe as if
     memset(p->tf, 0, sizeof(*p->tf));
@@ -185,6 +187,7 @@ void userinit(void)
     p->cwd = namei("/");
 
     p->state = RUNNABLE;
+    p->is_main_thread = 1;
 }
 
 // Grow current process's memory by n bytes.
@@ -266,6 +269,7 @@ int fork(void)
     pid = np->pid;
     np->state = RUNNABLE;
     safestrcpy(np->name, proc->name, sizeof(proc->name));
+    np->is_main_thread = 1;
 
     return pid;
 }
@@ -724,4 +728,83 @@ int settickets(int pid, int n_tickets) {
         return -1;
     p->tickets = n_tickets;
     return 0;
+}
+
+void print_stack(char* mem) {
+    for (int i = 0; i < PTE_SZ; i++) {
+        cprintf("%p: %d\n", &mem);
+        mem++;
+    }
+}
+
+int thread_create(int* tid_ptr, char* func_ptr, char* args) {
+    int i, pid;
+    struct proc *np;
+
+    // Allocate process.
+    if((np = allocproc()) == 0) {
+        return -1;
+    }
+
+    // Copy process state from p.
+    np->pgdir = proc->pgdir;
+
+    np->sz = proc->sz;
+    np->parent = proc;
+    *np->tf = *proc->tf;
+    // set the number of syscalls
+    np->nsyscalls = 0;
+    // set the number of pickets of the child to be the same as the parent
+    np->tickets = proc->tickets;
+
+    // Clear r0 so that fork returns 0 in the child.
+    np->tf->r0 = 0;
+
+    for(i = 0; i < NOFILE; i++) {
+        if(proc->ofile[i]) {
+            np->ofile[i] = proc->ofile[i];
+        }
+    }
+
+    np->cwd = idup(proc->cwd);
+
+    pid = np->pid;
+    np->state = RUNNABLE;
+    safestrcpy(np->name, proc->name, sizeof(proc->name));
+    np->is_main_thread = 0;
+
+    *tid_ptr = pid;
+
+    // alloc 2 pages for the user stack follow the same method, one is empty to detect stack overflow and the one below that is the stack
+    int sz = np->sz;
+    uint sp;
+
+    sz = align_up (sz, PTE_SZ);
+
+    if ((sz = allocuvm(np->pgdir, sz, sz + 2 * PTE_SZ)) == 0) {
+        goto bad;
+    }
+
+    clearpteu(np->pgdir, (char*) (sz - 2 * PTE_SZ));
+    print_stack((char *)align_up(proc->tf->sp_usr, PTE_SZ));
+    // print_stack((char *)align_up(np->tf->sp_usr, PTE_SZ));
+    sp = sz;
+    // TODO: Figure out a way to put the params on the tf
+    np->sz = sz;
+    proc->sz = sz;
+    cprintf("function ptr: %p\n", func_ptr);
+    pgdump1(np->pgdir, 1);
+    pgdump1(proc->pgdir, 1);
+    np->tf->pc = (uint) func_ptr;
+    np->tf->sp_usr = sp;
+    np->tf->r0 = 0;
+    np->tf->r1 = sp - (0 + 1) * 4;
+
+    return pid;
+
+    bad:
+    // clear the alloted uvm
+    // deallocuvm(np->pgdir, sz + 2 * PTE_SZ, sz);
+    panic("Thread creation failed");
+    return -1;
 }
