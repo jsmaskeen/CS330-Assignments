@@ -877,8 +877,8 @@ int thread_create(int* tid_ptr, char* func_ptr, char* args) {
 
     np->sz = sz;
     proc->sz = sz;
-    pgdump1(np->pgdir, 1);
-    pgdump1(proc->pgdir, 1);
+    // pgdump1(np->pgdir, 1);
+    // pgdump1(proc->pgdir, 1);
     np->tf->pc = (uint) func_ptr;
     np->tf->sp_usr = sp;
     np->tf->r0 = (uint) args; // TODO: find a better way put the data on the stack and call that instead of doing this.
