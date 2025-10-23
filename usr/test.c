@@ -3,7 +3,7 @@
 
 void* function(void* param) {
 	// int a = 0;
-	sleep(10);
+	sleep(100);
 	printf(1, "Here: %d\n", (int)param);
 	printf(1, "Child PID: %d\n", (int)getpid());
 	thread_exit(0);
@@ -21,13 +21,14 @@ int main()
 
 	uint tid;
 	thread_create(&tid, &function, (void *) a);
+	printf(1, "thread_id: %d\n", tid);
 
 	thread_exit(0);
 
 	printf(1, "Here2:\n");
-	sleep(100);
+	// sleep(1);
 	printf(1, "Here2:\n");
-	sleep(100);
+	// sleep(100);
 
 	// need to cleanup
 	printf(1, "PID: %d\n", (int)getpid());

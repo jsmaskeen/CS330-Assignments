@@ -687,10 +687,14 @@ struct proc* get_process(int pid) {
 }
 
 int get_nsyscall(int pid) {
-    return get_process(pid)->nsyscalls;
+    acquire(&ptable.lock);
+    int res = get_process(pid)->nsyscalls;
+    release(&ptable.lock);
+    return res;
 }
 
 int get_proclist(int* buffer){
+    acquire(&ptable.lock);
     for (int i = 0; i < NPROC; i ++)
     {
        struct proc* current = &ptable.proc[i];
@@ -702,25 +706,35 @@ int get_proclist(int* buffer){
             *(buffer + i) = current->pid;
         }
     } 
+    release(&ptable.lock);
     return 0;
 }
 
 int get_parproc(int pid){
-    return get_process(pid)->parent->pid;
+    acquire(&ptable.lock);
+    int res = get_process(pid)->parent->pid;
+    release(&ptable.lock);
+    return res;
 }
 
 int get_procname(int pid, char* buffer){
+    acquire(&ptable.lock);
     safestrcpy(buffer, get_process(pid)->name, NPROC);
+    release(&ptable.lock);
     return 0;
 }
 
 int get_procstate(int pid) {
-    return get_process(pid)->state;
+    acquire(&ptable.lock);
+    int res = get_process(pid)->state;
+    release(&ptable.lock);
+    return res;
 }
 
 int get_pinfo(struct pstat *pstat) {
     struct proc* p;
 
+    acquire(&ptable.lock);
     for (int i = 0; i < NPROC; i++) {
         p = &ptable.proc[i];
         pstat->inuse[i] = (p->state == UNUSED) ? 0 : 1;
@@ -729,6 +743,7 @@ int get_pinfo(struct pstat *pstat) {
         pstat->boostsleft[i] = p->boosts;
         pstat->runticks[i] = p->runticks;
     }
+    release(&ptable.lock);
 
     return 0;
 }
@@ -738,10 +753,13 @@ void srand(uint seed) {
 }
 
 int settickets(int pid, int n_tickets) {
+    acquire(&ptable.lock);
     struct proc *p = get_process(pid);
     if (p == 0 || n_tickets < 0) 
         return -1;
     p->tickets = n_tickets;
+    release(&ptable.lock);
+
     return 0;
 }
 
@@ -919,4 +937,19 @@ int thread_exit() { // note that some one should call join to cleanup this guy
 
 void thread_join(uint tid) {
     // TODO: Implement this
+    struct proc* thread = get_process(tid);
+
+    if (thread == 0) 
+        panic("You are waiting for someone that doesn't exist");
+        
+    if (thread->parent != proc) {
+        panic("You don't have ownership of this thread");
+    }
+
+    while (1) {
+        if (thread->state == ZOMBIE) 
+            return 0;
+        
+        sleep()
+    }
 }
