@@ -262,7 +262,10 @@ int sys_thread_exit(void)
 
 int sys_thread_join(void)
 {
-    return -1;
+    int tid;
+    if (argint(0, &tid) < 0) 
+        return -1;
+    return thread_join(tid);
 }
 
 int sys_barrier_init(void)

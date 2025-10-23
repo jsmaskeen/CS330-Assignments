@@ -935,8 +935,9 @@ int thread_exit() { // note that some one should call join to cleanup this guy
     return -1;
 }
 
-void thread_join(uint tid) {
-    // TODO: Implement this
+int thread_join(uint tid) {
+    // TODO: Fix edge cases like joining the same thread
+    acquire(&ptable.lock);
     struct proc* thread = get_process(tid);
 
     if (thread == 0) 
@@ -947,9 +948,33 @@ void thread_join(uint tid) {
     }
 
     while (1) {
-        if (thread->state == ZOMBIE) 
+        if (thread->state == ZOMBIE) {
+            // uint sp = thread->tf->sp_usr;
+            free_page(thread->kstack);
+            thread->kstack = 0;
+            thread->usyscall = 0;
+            // TODO: delete the page table entries for this stack
+            // TODO: Free stack
+
+            thread->state = UNUSED;
+            thread->pid = 0;
+            thread->nsyscalls = 0;
+            thread->parent = 0;
+            thread->name[0] = 0;
+            thread->killed = 0;
+            thread->wakeup_tick = 0;
+            release(&ptable.lock);
             return 0;
+        }
         
-        sleep()
+        if(proc->killed){
+            release(&ptable.lock);
+            return -1;
+        }
+        
+        sleep(proc, &ptable.lock);
     }
+
+    release(&ptable.lock);
+    return -1;
 }

@@ -148,7 +148,7 @@ void 						srand(uint);
 int 						settickets(int, int);
 int 						thread_create(int*, char*, char*);
 int 						thread_exit(void);
-void 						thread_join(uint);
+int 						thread_join(uint);
 // swtch.S
 void            swtch(struct context**, struct context*);
 

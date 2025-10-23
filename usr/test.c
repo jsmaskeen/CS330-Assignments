@@ -24,7 +24,8 @@ int main()
 	printf(1, "thread_id: %d\n", tid);
 
 	thread_exit(0);
-
+	thread_join(tid);
+	
 	printf(1, "Here2:\n");
 	// sleep(1);
 	printf(1, "Here2:\n");
