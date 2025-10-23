@@ -257,7 +257,7 @@ int sys_thread_create(void)
 
 int sys_thread_exit(void)
 {
-    return -1;
+    return thread_exit();
 }
 
 int sys_thread_join(void)

@@ -286,6 +286,9 @@ void exit(int exit_code)
         panic("init exiting");
     }
 
+    if (!proc->is_main_thread)
+        panic("WTF why is a thread calling exit this is not allowed");
+
     // Close all open files.
     for(fd = 0; fd < NOFILE; fd++){
         if(proc->ofile[fd]){
@@ -304,12 +307,21 @@ void exit(int exit_code)
 
     // Pass abandoned children to init.
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-        if(p->parent == proc){
+        if(p->parent == proc && p->is_main_thread) { // only pass on the forked processes not threads
             p->parent = initproc;
 
             if(p->state == ZOMBIE) {
                 wakeup1(initproc);
             }
+        } else if (p->parent == proc) {
+            // TODO: kill him but nicely
+            p->killed = 1;
+
+            if (p->state == SLEEPING) 
+                p->state = RUNNABLE;
+
+            // but who will cleanup?
+            panic("No one to cleanup the body!!");
         }
     }
 
@@ -340,13 +352,16 @@ int wait(void)
 
             havekids = 1;
 
-            if(p->state == ZOMBIE){
+            if(p->state == ZOMBIE) {
                 // Found one.
                 pid = p->pid;
                 free_page(p->kstack);
                 p->kstack = 0;
                 p->usyscall = 0;
-                freevm(p->pgdir);
+                if (p->is_main_thread) { // only let the main thread clear the memory
+                    // cprintf("Cleanup %d\n", p->pid);
+                    freevm(p->pgdir);
+                }
                 p->state = UNUSED;
                 p->pid = 0;
                 p->nsyscalls = 0;
@@ -799,7 +814,7 @@ int thread_create(int* tid_ptr, char* func_ptr, char* args) {
     np->pgdir = proc->pgdir;
 
     np->sz = proc->sz;
-    np->parent = proc;
+    np->parent = proc; // this is setting the parent but cleanup twice?
     *np->tf = *proc->tf;
     // set the number of syscalls
     np->nsyscalls = 0;
@@ -842,15 +857,13 @@ int thread_create(int* tid_ptr, char* func_ptr, char* args) {
     sp = sz;
     // cprintf("Final Size: %d\n", sz);
 
-    // TODO: Figure out a way to put the params on the tf
-    // put the 
     np->sz = sz;
     proc->sz = sz;
     pgdump1(np->pgdir, 1);
     pgdump1(proc->pgdir, 1);
     np->tf->pc = (uint) func_ptr;
     np->tf->sp_usr = sp;
-    np->tf->r0 = (uint) args;
+    np->tf->r0 = (uint) args; // TODO: find a better way put the data on the stack and call that instead of doing this.
     
     return pid;
 
@@ -859,4 +872,51 @@ int thread_create(int* tid_ptr, char* func_ptr, char* args) {
     // deallocuvm(np->pgdir, sz + 2 * PTE_SZ, sz);
     panic("Thread creation failed");
     return -1;
+}
+
+int thread_exit() { // note that some one should call join to cleanup this guy
+    // clean up thread
+    if (proc->is_main_thread)
+        return 0; // should be noop
+    
+    struct proc *p;
+
+    iput(proc->cwd);
+    proc->cwd = 0;
+
+    acquire(&ptable.lock);
+
+    // TODO: Correct this
+    // Parent might be sleeping in wait().
+    wakeup1(proc->parent);
+
+    // Pass abandoned children to init.
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(p->parent == proc && p->is_main_thread) { // only pass on the forked processes not threads
+            p->parent = initproc;
+
+            if(p->state == ZOMBIE) {
+                wakeup1(initproc);
+            }
+        } else if (p->parent == proc) {
+            // Thread can't kill right?
+            // or should it kill
+            // TODO: Figure this out for now I have kept it that we will kill all the subthreads also
+            p->killed = 1;
+
+            if (p->state == SLEEPING) 
+                p->state = RUNNABLE;
+        }
+    }
+
+    // Jump into the scheduler, never to return.
+    proc->state = ZOMBIE;
+    sched();
+
+    panic("zombie exit");
+    return -1;
+}
+
+void thread_join(uint tid) {
+    // TODO: Implement this
 }
