@@ -1,10 +1,10 @@
 #include "types.h"
 #include "usr/user.h"
 
-void* function() {
+void* function(void* param) {
 	// int a = 0;
 	sleep(10);
-	printf(1, "Here");
+	printf(1, "Here: %d\n", (int)param);
 	exit(0);
 }
 
@@ -17,8 +17,8 @@ int main()
 	printf(1, "Address of a: %p and b: %p, and f: %p, and main: %p \n", &a, &b, &function, &main);
 
 	uint tid;
-	int something;
-	thread_create(&tid, &function, &something);
+	thread_create(&tid, &function, (void *) a);
+
 	sleep(100);
 
 	exit(0);

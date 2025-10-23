@@ -740,12 +740,61 @@ void print_stack(char* mem) {
 int thread_create(int* tid_ptr, char* func_ptr, char* args) {
     int i, pid;
     struct proc *np;
+    {
+        char *sp;
 
-    // Allocate process.
-    if((np = allocproc()) == 0) {
-        return -1;
+        acquire(&ptable.lock);
+
+        for(np = ptable.proc; np < &ptable.proc[NPROC]; np++) {
+            if(np->state == UNUSED) {
+                goto found;
+            }
+
+        }
+
+        release(&ptable.lock);
+        return 0;
+
+        found:
+        np->state = EMBRYO;
+        np->pid = nextpid++;
+        np->wakeup_tick = 0;
+        release(&ptable.lock);
+
+        // Allocate kernel stack.
+        if((np->kstack = alloc_page ()) == 0){
+            np->state = UNUSED;
+            return -1;
+        }
+
+        np->usyscall = proc->usyscall;
+
+        sp = np->kstack + KSTACKSIZE;
+
+        // Leave room for trap frame.
+        sp -= sizeof (*np->tf);
+        np->tf = (struct trapframe*)sp;
+
+        // Set up new context to start executing at forkret,
+        // which returns to trapret.
+        sp -= 4;
+        *(uint*)sp = (uint)trapret;
+
+        sp -= 4;
+        *(uint*)sp = (uint)np->kstack + KSTACKSIZE;
+
+        sp -= sizeof (*np->context);
+        np->context = (struct context*)sp;
+        memset(np->context, 0, sizeof(*np->context));
+
+        // skip the push {fp, lr} instruction in the prologue of forkret.
+        // This is different from x86, in which the harderware pushes return
+        // address before executing the callee. In ARM, return address is
+        // loaded into the lr register, and push to the stack by the callee
+        // (if and when necessary). We need to skip that instruction and let
+        // it use our implementation.
+        np->context->lr = (uint)forkret+4;
     }
-
     // Copy process state from p.
     np->pgdir = proc->pgdir;
 
@@ -778,28 +827,31 @@ int thread_create(int* tid_ptr, char* func_ptr, char* args) {
     // alloc 2 pages for the user stack follow the same method, one is empty to detect stack overflow and the one below that is the stack
     int sz = np->sz;
     uint sp;
+    // cprintf("Original Size: %d\n", sz);
 
     sz = align_up (sz, PTE_SZ);
+    // cprintf("Alignup Size: %d\n", sz);
 
     if ((sz = allocuvm(np->pgdir, sz, sz + 2 * PTE_SZ)) == 0) {
         goto bad;
     }
 
     clearpteu(np->pgdir, (char*) (sz - 2 * PTE_SZ));
-    print_stack((char *)align_up(proc->tf->sp_usr, PTE_SZ));
+    // print_stack((char *)align_up(proc->tf->sp_usr, PTE_SZ));
     // print_stack((char *)align_up(np->tf->sp_usr, PTE_SZ));
     sp = sz;
+    // cprintf("Final Size: %d\n", sz);
+
     // TODO: Figure out a way to put the params on the tf
+    // put the 
     np->sz = sz;
     proc->sz = sz;
-    cprintf("function ptr: %p\n", func_ptr);
     pgdump1(np->pgdir, 1);
     pgdump1(proc->pgdir, 1);
     np->tf->pc = (uint) func_ptr;
     np->tf->sp_usr = sp;
-    np->tf->r0 = 0;
-    np->tf->r1 = sp - (0 + 1) * 4;
-
+    np->tf->r0 = (uint) args;
+    
     return pid;
 
     bad:

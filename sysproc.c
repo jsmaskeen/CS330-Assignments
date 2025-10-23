@@ -248,7 +248,7 @@ int sys_thread_create(void)
     char* function_ptr;
     char* args;
 
-    if (argptr(0, &tid_ptr, 8) < 0 || argptr(1, &function_ptr, 8) < 0 || argptr(1, &args, 8)) {
+    if (argptr(0, &tid_ptr, 8) < 0 || argptr(1, &function_ptr, 8) < 0 || argptr(2, &args, 8)) {
         return -1;
     }
 
