@@ -3,6 +3,7 @@
 #include "fcntl.h"
 #include "user.h"
 #include "usyscall.h"
+#include "arm.h"
 
 char*
 strcpy(char *s, char *t)
@@ -152,34 +153,65 @@ ugetpid(void)
   // return u->pid + 1; // @karan try uncommenting this see how pftable_test will fail at ugetpid
 }
 
-
-
 void initiateLock(struct lock* l) {
-
+    l->isInitiated = 1;
+    l->lockvar = 0;
 }
 
 void acquireLock(struct lock* l) {
+    // while (1)
+    // {
+    //     interruptoff();
+    //     if (l -> lockvar == 0)
+    //     {
+    //         l -> lockvar = 1;
+    //         interrupton(); break;
+    //     }
+    //     interrupton();
+    // }
+    interruptoff();
+    l -> lockvar = 1;
 
 }
 
 void releaseLock(struct lock* l) {
-
+    // interruptoff();
+    // if (l -> isInitiated && l->lockvar)
+    // {
+    //     l -> lockvar = 0;
+    // }
+    // interrupton();
+    l -> lockvar = 0;
+    interrupton();
 }
 
 void initiateCondVar(struct condvar* cv) {
-
+    int chan = getChannel();
+    cv -> var = chan;
+    cv -> isInitiated = 1;
 }
 
 void condWait(struct condvar* cv, struct lock* l) {
-
+    if (cv -> isInitiated && l -> isInitiated)
+    {
+        releaseLock(l);
+        sleepChan(cv -> var);
+        acquireLock(l);
+    }
 }
 
 void broadcast(struct condvar* cv) {
-
+    if (cv -> isInitiated)
+    {
+        sigChan(cv -> var);
+    }
 }
 
 void signal(struct condvar* cv) {
-
+    if (cv -> isInitiated)
+    {
+        sigOneChan(cv -> var);
+    }
 }
 
 void semInit(struct semaphore* s, int initVal) {

@@ -136,6 +136,7 @@ void            sleep(void*, struct spinlock*);
 void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
+void            wakeup_one(void*);
 void            yield(void);
 struct proc* 		get_process(int);
 int 						get_nsyscall(int);
@@ -149,6 +150,7 @@ int 						settickets(int, int);
 int 						thread_create(int*, char*, char*);
 int 						thread_exit(void);
 int 						thread_join(uint);
+
 // swtch.S
 void            swtch(struct context**, struct context*);
 

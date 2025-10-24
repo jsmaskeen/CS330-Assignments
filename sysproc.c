@@ -8,6 +8,9 @@
 #include "pstat.h"
 #include "barrier.h"
 
+static int available_channel = 0;
+static int CHANNELS[NPROC];
+
 int sys_fork(void)
 {
     return fork();
@@ -288,20 +291,53 @@ int sys_waitpid(void)
 
 int sys_sleepChan(void)
 {
-    return -1;
+    int chan;
+    if (argint(0, &chan) < 0) return -1;
+    if (chan < 0) return -1;
+
+    acquire(&tickslock);
+    sleep((void *)&CHANNELS[chan], &tickslock); //technically any lock works we just use tickslock
+    release(&tickslock);
+
+    return 0;
 }
 
 int sys_getChannel(void)
 {
-    return -1;
+    return available_channel++;
 }
 
 int sys_sigChan(void)
 {
-    return -1;
+    int chan;
+    if (argint(0, &chan) < 0) return -1;
+
+    if (chan < 0) return 0;
+    wakeup((void *)&CHANNELS[chan]);
+
+    return 0;
 }
 
 int sys_sigOneChan(void)
 {
-    return -1;
+    int chan;
+    if (argint(0, &chan) < 0) return -1;
+
+    if (chan < 0) return 0;
+    wakeup_one((void *)&CHANNELS[chan]);
+    return 0;
+}
+
+int sys_interruptoff(void)
+{
+    cli();
+    // pushcli();
+    return 0;
+}
+
+int sys_interrupton(void)
+{
+    sti();
+    // popcli();
+    return 0;
 }

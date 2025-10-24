@@ -5,7 +5,7 @@ void* thread1(void* arg){
     printf(1, "Thread 1 created %d\n", *(int*)arg);
     int* argPtr = (int*)arg;
     *argPtr = (*argPtr + 1);
-    exit(0);
+    thread_exit();
     return 0;
 }
 

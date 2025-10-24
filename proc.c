@@ -591,11 +591,40 @@ static void wakeup1(void *chan)
     }
 }
 
+static void wakeup2(void *chan)
+{
+    struct proc *p;
+
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if(p->state == SLEEPING && p->chan == chan) {
+            // dor debugging / visualizing
+            // if (chan == &ticks){
+            //     cprintf("%s (%d) wakeup\n",p->name, p->pid);
+            // }
+            // p->state = RUNNABLE;
+            if (p->wakeup_tick == 0 || ticks >= p->wakeup_tick){
+                // if (chan == &ticks){
+                //     cprintf("%s (%d) wakeup\n",p->name, p->pid);
+                // }
+                p->state = RUNNABLE;
+                break;
+            }
+        }
+    }
+}
+
 // Wake up all processes sleeping on chan.
 void wakeup(void *chan)
 {
     acquire(&ptable.lock);
     wakeup1(chan);
+    release(&ptable.lock);
+}
+
+void wakeup_one(void * chan)
+{
+    acquire(&ptable.lock);
+    wakeup2(chan);
     release(&ptable.lock);
 }
 

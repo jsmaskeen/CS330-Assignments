@@ -138,6 +138,8 @@ extern int sys_sleepChan(void);
 extern int sys_getChannel(void);
 extern int sys_sigChan(void);
 extern int sys_sigOneChan(void);
+extern int sys_interruptoff(void);
+extern int sys_interrupton(void);
 ///////////// End of new addition /////////////
 
 static int (*syscalls[])(void) = {
@@ -174,7 +176,7 @@ static int (*syscalls[])(void) = {
         [SYS_settickets]        sys_settickets,
         [SYS_pgdump]            sys_pgdump,
         [SYS_kpgdump]           sys_kpgdump,
-///////////////// New addition /////////////////
+///////////////// New addition /////////////////        
         [SYS_thread_create]     sys_thread_create,
         [SYS_thread_exit]       sys_thread_exit,
         [SYS_thread_join]       sys_thread_join,
@@ -187,6 +189,8 @@ static int (*syscalls[])(void) = {
         [SYS_getChannel]        sys_getChannel,
         [SYS_sigChan]           sys_sigChan,
         [SYS_sigOneChan]        sys_sigOneChan,
+        [SYS_interruptoff]      sys_interruptoff,
+        [SYS_interrupton]       sys_interrupton,
 /////////// End of final parts of threads lab/////////  
 };
 
