@@ -77,6 +77,7 @@ static struct proc* allocproc(void)
     found:
     p->state = EMBRYO;
     p->pid = nextpid++;
+    p->thread_id = p->pid;
     p->wakeup_tick = 0;
     release(&ptable.lock);
 
@@ -364,6 +365,7 @@ int wait(void)
                 }
                 p->state = UNUSED;
                 p->pid = 0;
+                p->thread_id = 0;
                 p->nsyscalls = 0;
                 p->parent = 0;
                 p->name[0] = 0;
@@ -824,6 +826,7 @@ int thread_create(int* tid_ptr, char* func_ptr, char* args) {
         found:
         np->state = EMBRYO;
         np->pid = nextpid++;
+        np->thread_id = np->pid;
         np->wakeup_tick = 0;
         release(&ptable.lock);
 
@@ -911,7 +914,6 @@ int thread_create(int* tid_ptr, char* func_ptr, char* args) {
     np->sz = sz;
     proc->sz = sz;
     np->killed = 0;
-    np->thread_id = np->pid;
 
     // pgdump1(np->pgdir, 1);
     // pgdump1(proc->pgdir, 1);
@@ -994,6 +996,7 @@ int thread_join(uint tid) {
 
             thread->state = UNUSED;
             thread->pid = 0;
+            thread->thread_id = 0;
             thread->nsyscalls = 0;
             thread->parent = 0;
             thread->name[0] = 0;
