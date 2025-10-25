@@ -191,6 +191,16 @@ void userinit(void)
     p->is_main_thread = 1;
 }
 
+void update_size(struct proc* process, int sz) {
+    process->sz = sz;
+    for (struct proc* p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (!p->is_main_thread && p->parent == process) {
+            p->sz = sz;
+            update_size(p, sz);
+        }
+    }
+}
+
 // Grow current process's memory by n bytes.
 // Return 0 on success, -1 on failure.
 int growproc(int n)
@@ -210,7 +220,10 @@ int growproc(int n)
         }
     }
 
-    proc->sz = sz;
+    acquire(&ptable.lock);
+    update_size(proc, sz);
+    release(&ptable.lock);
+    // TODO: Update the size of all the threads
     switchuvm(proc);
 
     return 0;
@@ -817,7 +830,6 @@ int thread_create(int* tid_ptr, char* func_ptr, char* args) {
             if(np->state == UNUSED) {
                 goto found;
             }
-
         }
 
         release(&ptable.lock);
@@ -856,12 +868,6 @@ int thread_create(int* tid_ptr, char* func_ptr, char* args) {
         np->context = (struct context*)sp;
         memset(np->context, 0, sizeof(*np->context));
 
-        // skip the push {fp, lr} instruction in the prologue of forkret.
-        // This is different from x86, in which the harderware pushes return
-        // address before executing the callee. In ARM, return address is
-        // loaded into the lr register, and push to the stack by the callee
-        // (if and when necessary). We need to skip that instruction and let
-        // it use our implementation.
         np->context->lr = (uint)forkret+4;
     }
     // Copy process state from p.
@@ -911,8 +917,17 @@ int thread_create(int* tid_ptr, char* func_ptr, char* args) {
     sp = sz;
     // cprintf("Final Size: %d\n", sz);
 
-    np->sz = sz;
-    proc->sz = sz;
+    // np->sz = sz;
+    // proc->sz = sz;
+
+    acquire(&ptable.lock);
+    update_size(proc, sz);
+    release(&ptable.lock);
+
+    if (np->sz != sz && proc->sz != sz) {
+        panic("WTF why did the size not get updated?");
+    }
+
     np->killed = 0;
 
     sp = (sp - 32 / 8) & ~3; // move the sp up and put the arg pointer here
@@ -1002,7 +1017,6 @@ int thread_join(uint tid) {
             // TODO: Free stack
             uint ss = thread->tf->sp_usr;
             ss = align_dn(align_dn(align_up(ss, PTE_SZ) - 1, PTE_SZ) - 1, PTE_SZ);
-            // cprintf("HERE %d %d %d %d %d\n", ss, align_up(ss, PTE_SZ), align_dn(align_up(ss, PTE_SZ) - 1, PTE_SZ), align_dn(align_dn(align_up(ss, PTE_SZ) - 1, PTE_SZ) - 1, PTE_SZ), thread->sz);
             deallocuvm(thread->pgdir, ss + 2 * PTE_SZ, ss);
             
             thread->state = UNUSED;

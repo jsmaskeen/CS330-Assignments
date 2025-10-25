@@ -19,10 +19,15 @@ int main(){
     printf(1, "Hello World\n");
     int x = 10;
     uint tid1, tid2;
+    sbrk(1 << 12);
     thread_create(&tid1, thread1, (void*)&x);
     thread_create(&tid2, thread2, (void*)&x);
+    sbrk(1 << 12);
     pgdump(1);
     thread_join(tid1);
+    sbrk(-(1 << 12));
+    pgdump(1);
+    sbrk(-(1 << 12));
     pgdump(1);
     thread_join(tid2);
     pgdump(1);
