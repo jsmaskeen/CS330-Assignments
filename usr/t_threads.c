@@ -23,11 +23,11 @@ int main(){
     thread_create(&tid1, thread1, (void*)&x);
     thread_create(&tid2, thread2, (void*)&x);
     sbrk(1 << 12);
-    pgdump(1);
+    // pgdump(1);
     thread_join(tid1);
-    pgdump(1);
+    // pgdump(1);
     thread_join(tid2);
-    pgdump(1);
+    // pgdump(1);
     printf(1,"Value of x = %d\n",x);
     exit(0);
 }

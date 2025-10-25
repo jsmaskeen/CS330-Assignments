@@ -9,7 +9,7 @@ struct all{
 
 void* thread2(void* arg){
     struct all* t = (struct all*) arg;
-    printf(1, "Thread 2 created %d\n", *(t->x));
+    // printf(1, "Thread 2 created %d\n", *(t->x));
     printf(1,"Gonna acquire lock\n");
     acquireLock(t->l);
     printf(1,"Acquired lock successfully\n");
