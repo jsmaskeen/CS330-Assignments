@@ -10,7 +10,6 @@
 #include "spinlock.h"
 
 static int available_channel = 1;
-// static struct spinlock CHANNE_LOCKS[NPROC];
 
 extern struct {
     struct spinlock lock;

@@ -178,14 +178,14 @@ void initiateLock(struct lock* l) {
 }
 
 void acquireLock(struct lock* l) {
-    while(xchg(&l->lockvar, 1) != 0) {
+    while(l -> isInitiated && xchg(&l->lockvar, 1) != 0) {
         // printf(1, "trying to acquire lock, val : %d \n", l->lockvar);
     }
     // printf(1, "acquired lock!");
 }
 
 void releaseLock(struct lock* l) {
-    xchg(&l->lockvar, 0); 
+    if (l -> isInitiated && l -> lockvar) xchg(&l->lockvar, 0); 
     // printf(1, "\n lock released, val : %d", l -> lockvar);
 }
 
