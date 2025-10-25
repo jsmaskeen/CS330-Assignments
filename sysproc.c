@@ -7,9 +7,15 @@
 #include "proc.h"
 #include "pstat.h"
 #include "barrier.h"
+#include "spinlock.h"
 
-static int available_channel = 0;
-static int CHANNELS[NPROC];
+static int available_channel = 1;
+// static struct spinlock CHANNE_LOCKS[NPROC];
+
+extern struct {
+    struct spinlock lock;
+    struct proc proc[NPROC];
+} ptable;
 
 int sys_fork(void)
 {
@@ -295,16 +301,21 @@ int sys_sleepChan(void)
     if (argint(0, &chan) < 0) return -1;
     if (chan < 0) return -1;
 
-    acquire(&tickslock);
-    sleep((void *)&CHANNELS[chan], &tickslock); //technically any lock works we just use tickslock
-    release(&tickslock);
+    // struct spinlock* lock = &CHANNE_LOCKS[chan];
+    acquire(&ptable.lock);
+    sleep((void *)(chan), &ptable.lock); //technically any lock works
+    release(&ptable.lock);
 
     return 0;
 }
 
 int sys_getChannel(void)
 {
-    return available_channel++;
+    int chan;
+    acquire(&ptable.lock);
+    chan = available_channel++;
+    release(&ptable.lock);
+    return chan;
 }
 
 int sys_sigChan(void)
@@ -313,7 +324,7 @@ int sys_sigChan(void)
     if (argint(0, &chan) < 0) return -1;
 
     if (chan < 0) return 0;
-    wakeup((void *)&CHANNELS[chan]);
+    wakeup((void *)(chan));
 
     return 0;
 }
@@ -324,7 +335,7 @@ int sys_sigOneChan(void)
     if (argint(0, &chan) < 0) return -1;
 
     if (chan < 0) return 0;
-    wakeup_one((void *)&CHANNELS[chan]);
+    wakeup_one((void *)(chan));
     return 0;
 }
 

@@ -8,7 +8,7 @@ struct all{
 };
 
 void* thread2(void* arg){
-    // printf(1, "Thread 2 created %d\n", *(int*)arg);
+    printf(1, "Thread 2 created %d\n", *(int*)arg);
     struct all* t = (struct all*) arg;
     printf(1,"Gonna acquire lock\n");
     acquireLock(t->l);
@@ -35,8 +35,8 @@ int main(){
     initiateCondVar(&cv);
     acquireLock(&l);
     thread_create(&tid1,thread2,(void*)&a);
-    sleep(200);
-    condWait(&cv,&l);
+    sleep(20);
+    // condWait(&cv,&l);
     releaseLock(&l);
     thread_join(tid1);
     printf(1,"Value of x = %d\n",x);
