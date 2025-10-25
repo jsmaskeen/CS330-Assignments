@@ -181,7 +181,7 @@ void acquireLock(struct lock* l) {
     while(xchg(&l->lockvar, 1) != 0) {
         // printf(1, "trying to acquire lock, val : %d \n", l->lockvar);
     }
-    printf(1, "acquired lock!");
+    // printf(1, "acquired lock!");
 }
 
 void releaseLock(struct lock* l) {
@@ -198,12 +198,12 @@ void initiateCondVar(struct condvar* cv) {
 void condWait(struct condvar* cv, struct lock* l) {
     if (cv -> isInitiated && l -> isInitiated)
     {
-        printf(1, "Condwait releasing lock");
+        // printf(1, "Condwait releasing lock");
         releaseLock(l);
-        printf(1, "Condwait released lock");
+        // printf(1, "Condwait released lock");
         sleepChan(cv -> var);
 
-        printf(1, "signal caught, reaquiring lock");
+        // printf(1, "signal caught, reaquiring lock");
         acquireLock(l);
     }
 }

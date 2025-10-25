@@ -39,7 +39,8 @@ UPROGS=\
 	_t_sleepwake\
 	_t_threads\
 	_t_waitpid\
-	_test
+	_test\
+	_testll
 
 all: $(FS_IMAGE)
 
