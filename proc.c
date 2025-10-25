@@ -703,6 +703,10 @@ void procdump(void)
     show_callstk("procdump: \n");
 }
 
+int getpid(struct proc* process) {
+    return process->is_main_thread ? process->pid : getpid(process->parent);
+}
+
 struct proc* get_process(int pid) {
     struct proc *p;
 
