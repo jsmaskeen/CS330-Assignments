@@ -36,7 +36,7 @@ int main(){
     acquireLock(&l);
     thread_create(&tid1,thread2,(void*)&a);
     sleep(20);
-    // condWait(&cv,&l);
+    condWait(&cv,&l);
     releaseLock(&l);
     thread_join(tid1);
     printf(1,"Value of x = %d\n",x);
