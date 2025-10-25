@@ -138,6 +138,7 @@ int             wait(void);
 void            wakeup(void*);
 void            wakeup_one(void*);
 void            yield(void);
+int			 	getpid(struct proc*);
 struct proc* 	get_process(int);
 int 			get_nsyscall(int);
 int 			get_proclist(int*);
