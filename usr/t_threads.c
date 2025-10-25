@@ -25,9 +25,6 @@ int main(){
     sbrk(1 << 12);
     pgdump(1);
     thread_join(tid1);
-    sbrk(-(1 << 12));
-    pgdump(1);
-    sbrk(-(1 << 12));
     pgdump(1);
     thread_join(tid2);
     pgdump(1);
