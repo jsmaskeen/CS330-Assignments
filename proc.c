@@ -907,7 +907,7 @@ int thread_create(int* tid_ptr, char* func_ptr, char* args) {
     np->sz = sz;
     proc->sz = sz;
     np->killed = 0;
-
+    np->thread_id = np->pid;
 
     // pgdump1(np->pgdir, 1);
     // pgdump1(proc->pgdir, 1);

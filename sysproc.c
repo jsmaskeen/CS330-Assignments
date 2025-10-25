@@ -54,7 +54,7 @@ int sys_kill(void)
 
 int sys_getpid(void)
 {
-    return proc->pid;
+    return proc->is_main_thread ? proc->pid : proc->parent->pid; // return the pid of the parent
 }
 
 int sys_sbrk(void)

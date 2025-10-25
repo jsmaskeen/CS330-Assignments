@@ -73,6 +73,7 @@ struct proc {
     int             boosts;                  // the number of lotteries for which the tickets owned by this process will be doubled
     int             runticks;                // the number of ticks this process has been scheduled
     int             is_main_thread;          // if the current unit of execution is a main thread or not
+    volatile int    thread_id;               // What is the id of the current thread
     struct usyscall* usyscall;               // proc's shared page with the kernel
 };
 
