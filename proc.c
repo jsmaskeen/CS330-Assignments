@@ -915,12 +915,17 @@ int thread_create(int* tid_ptr, char* func_ptr, char* args) {
     proc->sz = sz;
     np->killed = 0;
 
+    sp = (sp - 32 / 8) & ~3; // move the sp up and put the arg pointer here
+
+    if (copyout(np->pgdir, sp, args, 32 / 8) < 0) {
+        goto bad;
+    }
     // pgdump1(np->pgdir, 1);
     // pgdump1(proc->pgdir, 1);
     np->tf->pc = (uint) func_ptr;
     np->tf->sp_usr = sp;
-    np->tf->r0 = (uint) args; // TODO: find a better way put the data on the stack and call that instead of doing this.
-    
+    np->tf->r0 = (uint) args;
+
     return pid;
 
     bad:
@@ -946,8 +951,14 @@ int thread_exit() { // note that some one should call join to cleanup this guy
     // Parent might be sleeping in wait().
     wakeup1(proc->parent);
 
+    for(int i = 0; i < NOFILE; i++) {
+        if(proc->ofile[i]) {
+            proc->ofile[i] = 0;
+        }
+    }
+
     // Pass abandoned children to init.
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++){
         if(p->parent == proc && p->is_main_thread) { // only pass on the forked processes not threads
             p->parent = initproc;
 
@@ -980,10 +991,6 @@ int thread_join(uint tid) {
 
     if (thread == 0) 
         panic("You are waiting for someone that doesn't exist");
-        
-    if (thread->parent != proc) {
-        panic("You don't have ownership of this thread");
-    }
 
     while (1) {
         if (thread->state == ZOMBIE) {
@@ -993,7 +1000,11 @@ int thread_join(uint tid) {
             thread->usyscall = 0;
             // TODO: delete the page table entries for this stack
             // TODO: Free stack
-
+            uint ss = thread->tf->sp_usr;
+            ss = align_dn(align_dn(align_up(ss, PTE_SZ) - 1, PTE_SZ) - 1, PTE_SZ);
+            // cprintf("HERE %d %d %d %d %d\n", ss, align_up(ss, PTE_SZ), align_dn(align_up(ss, PTE_SZ) - 1, PTE_SZ), align_dn(align_dn(align_up(ss, PTE_SZ) - 1, PTE_SZ) - 1, PTE_SZ), thread->sz);
+            deallocuvm(thread->pgdir, ss + 2 * PTE_SZ, ss);
+            
             thread->state = UNUSED;
             thread->pid = 0;
             thread->thread_id = 0;
