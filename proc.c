@@ -165,8 +165,10 @@ void userinit(void)
     p->nsyscalls = 0;
 
     // map the usyscall page and set the PID. AP_KUR gives user read-only access.
+    // cprintf("HERE\n");
     mappages(p->pgdir, (void*)USYSCALL, PTE_SZ, v2p(p->usyscall), AP_KUR);
     p->usyscall->pid = p->pid;
+    // cprintf("HERE Done\n");
 
     // craft the trapframe as if
     memset(p->tf, 0, sizeof(*p->tf));
@@ -185,6 +187,7 @@ void userinit(void)
     p->cwd = namei("/");
 
     p->state = RUNNABLE;
+    p->is_main_thread = 1;
 }
 
 // Grow current process's memory by n bytes.
@@ -266,6 +269,7 @@ int fork(void)
     pid = np->pid;
     np->state = RUNNABLE;
     safestrcpy(np->name, proc->name, sizeof(proc->name));
+    np->is_main_thread = 1;
 
     return pid;
 }
@@ -281,6 +285,9 @@ void exit(int exit_code)
     if(proc == initproc) {
         panic("init exiting");
     }
+
+    if (!proc->is_main_thread)
+        panic("WTF why is a thread calling exit this is not allowed");
 
     // Close all open files.
     for(fd = 0; fd < NOFILE; fd++){
@@ -300,12 +307,21 @@ void exit(int exit_code)
 
     // Pass abandoned children to init.
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-        if(p->parent == proc){
+        if(p->parent == proc && p->is_main_thread) { // only pass on the forked processes not threads
             p->parent = initproc;
 
             if(p->state == ZOMBIE) {
                 wakeup1(initproc);
             }
+        } else if (p->parent == proc) {
+            // TODO: kill him but nicely
+            p->killed = 1;
+
+            if (p->state == SLEEPING) 
+                p->state = RUNNABLE;
+
+            // but who will cleanup?
+            panic("No one to cleanup the body!!");
         }
     }
 
@@ -336,13 +352,16 @@ int wait(void)
 
             havekids = 1;
 
-            if(p->state == ZOMBIE){
+            if(p->state == ZOMBIE) {
                 // Found one.
                 pid = p->pid;
                 free_page(p->kstack);
                 p->kstack = 0;
                 p->usyscall = 0;
-                freevm(p->pgdir);
+                if (p->is_main_thread) { // only let the main thread clear the memory
+                    // cprintf("Cleanup %d\n", p->pid);
+                    freevm(p->pgdir);
+                }
                 p->state = UNUSED;
                 p->pid = 0;
                 p->nsyscalls = 0;
@@ -572,11 +591,40 @@ static void wakeup1(void *chan)
     }
 }
 
+static void wakeup2(void *chan)
+{
+    struct proc *p;
+
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if(p->state == SLEEPING && p->chan == chan) {
+            // dor debugging / visualizing
+            // if (chan == &ticks){
+            //     cprintf("%s (%d) wakeup\n",p->name, p->pid);
+            // }
+            // p->state = RUNNABLE;
+            if (p->wakeup_tick == 0 || ticks >= p->wakeup_tick){
+                // if (chan == &ticks){
+                //     cprintf("%s (%d) wakeup\n",p->name, p->pid);
+                // }
+                p->state = RUNNABLE;
+                break;
+            }
+        }
+    }
+}
+
 // Wake up all processes sleeping on chan.
 void wakeup(void *chan)
 {
     acquire(&ptable.lock);
     wakeup1(chan);
+    release(&ptable.lock);
+}
+
+void wakeup_one(void * chan)
+{
+    acquire(&ptable.lock);
+    wakeup2(chan);
     release(&ptable.lock);
 }
 
@@ -668,10 +716,14 @@ struct proc* get_process(int pid) {
 }
 
 int get_nsyscall(int pid) {
-    return get_process(pid)->nsyscalls;
+    acquire(&ptable.lock);
+    int res = get_process(pid)->nsyscalls;
+    release(&ptable.lock);
+    return res;
 }
 
 int get_proclist(int* buffer){
+    acquire(&ptable.lock);
     for (int i = 0; i < NPROC; i ++)
     {
        struct proc* current = &ptable.proc[i];
@@ -683,25 +735,35 @@ int get_proclist(int* buffer){
             *(buffer + i) = current->pid;
         }
     } 
+    release(&ptable.lock);
     return 0;
 }
 
 int get_parproc(int pid){
-    return get_process(pid)->parent->pid;
+    acquire(&ptable.lock);
+    int res = get_process(pid)->parent->pid;
+    release(&ptable.lock);
+    return res;
 }
 
 int get_procname(int pid, char* buffer){
+    acquire(&ptable.lock);
     safestrcpy(buffer, get_process(pid)->name, NPROC);
+    release(&ptable.lock);
     return 0;
 }
 
 int get_procstate(int pid) {
-    return get_process(pid)->state;
+    acquire(&ptable.lock);
+    int res = get_process(pid)->state;
+    release(&ptable.lock);
+    return res;
 }
 
 int get_pinfo(struct pstat *pstat) {
     struct proc* p;
 
+    acquire(&ptable.lock);
     for (int i = 0; i < NPROC; i++) {
         p = &ptable.proc[i];
         pstat->inuse[i] = (p->state == UNUSED) ? 0 : 1;
@@ -710,6 +772,7 @@ int get_pinfo(struct pstat *pstat) {
         pstat->boostsleft[i] = p->boosts;
         pstat->runticks[i] = p->runticks;
     }
+    release(&ptable.lock);
 
     return 0;
 }
@@ -719,9 +782,228 @@ void srand(uint seed) {
 }
 
 int settickets(int pid, int n_tickets) {
+    acquire(&ptable.lock);
     struct proc *p = get_process(pid);
     if (p == 0 || n_tickets < 0) 
         return -1;
     p->tickets = n_tickets;
+    release(&ptable.lock);
+
     return 0;
+}
+
+void print_stack(char* mem) {
+    for (int i = 0; i < PTE_SZ; i++) {
+        cprintf("%p: %d\n", &mem);
+        mem++;
+    }
+}
+
+int thread_create(int* tid_ptr, char* func_ptr, char* args) {
+    int i, pid;
+    struct proc *np;
+    {
+        char *sp;
+
+        acquire(&ptable.lock);
+
+        for(np = ptable.proc; np < &ptable.proc[NPROC]; np++) {
+            if(np->state == UNUSED) {
+                goto found;
+            }
+
+        }
+
+        release(&ptable.lock);
+        return 0;
+
+        found:
+        np->state = EMBRYO;
+        np->pid = nextpid++;
+        np->wakeup_tick = 0;
+        release(&ptable.lock);
+
+        // Allocate kernel stack.
+        if((np->kstack = alloc_page ()) == 0){
+            np->state = UNUSED;
+            return -1;
+        }
+
+        np->usyscall = proc->usyscall;
+
+        sp = np->kstack + KSTACKSIZE;
+
+        // Leave room for trap frame.
+        sp -= sizeof (*np->tf);
+        np->tf = (struct trapframe*)sp;
+
+        // Set up new context to start executing at forkret,
+        // which returns to trapret.
+        sp -= 4;
+        *(uint*)sp = (uint)trapret;
+
+        sp -= 4;
+        *(uint*)sp = (uint)np->kstack + KSTACKSIZE;
+
+        sp -= sizeof (*np->context);
+        np->context = (struct context*)sp;
+        memset(np->context, 0, sizeof(*np->context));
+
+        // skip the push {fp, lr} instruction in the prologue of forkret.
+        // This is different from x86, in which the harderware pushes return
+        // address before executing the callee. In ARM, return address is
+        // loaded into the lr register, and push to the stack by the callee
+        // (if and when necessary). We need to skip that instruction and let
+        // it use our implementation.
+        np->context->lr = (uint)forkret+4;
+    }
+    // Copy process state from p.
+    np->pgdir = proc->pgdir;
+
+    np->sz = proc->sz;
+    np->parent = proc; // this is setting the parent but cleanup twice?
+    *np->tf = *proc->tf;
+    // set the number of syscalls
+    np->nsyscalls = 0;
+    // set the number of pickets of the child to be the same as the parent
+    np->tickets = proc->tickets;
+
+    // Clear r0 so that fork returns 0 in the child.
+    np->tf->r0 = 0;
+
+    for(i = 0; i < NOFILE; i++) {
+        if(proc->ofile[i]) {
+            np->ofile[i] = proc->ofile[i];
+        }
+    }
+
+    np->cwd = idup(proc->cwd);
+
+    pid = np->pid;
+    np->state = RUNNABLE;
+    safestrcpy(np->name, proc->name, sizeof(proc->name));
+    np->is_main_thread = 0;
+
+    *tid_ptr = pid;
+
+    // alloc 2 pages for the user stack follow the same method, one is empty to detect stack overflow and the one below that is the stack
+    int sz = np->sz;
+    uint sp;
+    // cprintf("Original Size: %d\n", sz);
+
+    sz = align_up (sz, PTE_SZ);
+    // cprintf("Alignup Size: %d\n", sz);
+
+    if ((sz = allocuvm(np->pgdir, sz, sz + 2 * PTE_SZ)) == 0) {
+        goto bad;
+    }
+
+    clearpteu(np->pgdir, (char*) (sz - 2 * PTE_SZ));
+    // print_stack((char *)align_up(proc->tf->sp_usr, PTE_SZ));
+    // print_stack((char *)align_up(np->tf->sp_usr, PTE_SZ));
+    sp = sz;
+    // cprintf("Final Size: %d\n", sz);
+
+    np->sz = sz;
+    proc->sz = sz;
+    // pgdump1(np->pgdir, 1);
+    // pgdump1(proc->pgdir, 1);
+    np->tf->pc = (uint) func_ptr;
+    np->tf->sp_usr = sp;
+    np->tf->r0 = (uint) args; // TODO: find a better way put the data on the stack and call that instead of doing this.
+    
+    return pid;
+
+    bad:
+    // clear the alloted uvm
+    // deallocuvm(np->pgdir, sz + 2 * PTE_SZ, sz);
+    panic("Thread creation failed");
+    return -1;
+}
+
+int thread_exit() { // note that some one should call join to cleanup this guy
+    // clean up thread
+    if (proc->is_main_thread)
+        return 0; // should be noop
+    
+    struct proc *p;
+
+    iput(proc->cwd);
+    proc->cwd = 0;
+
+    acquire(&ptable.lock);
+
+    // TODO: Correct this
+    // Parent might be sleeping in wait().
+    wakeup1(proc->parent);
+
+    // Pass abandoned children to init.
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(p->parent == proc && p->is_main_thread) { // only pass on the forked processes not threads
+            p->parent = initproc;
+
+            if(p->state == ZOMBIE) {
+                wakeup1(initproc);
+            }
+        } else if (p->parent == proc) {
+            // Thread can't kill right?
+            // or should it kill
+            // TODO: Figure this out for now I have kept it that we will kill all the subthreads also
+            p->killed = 1;
+
+            if (p->state == SLEEPING) 
+                p->state = RUNNABLE;
+        }
+    }
+
+    // Jump into the scheduler, never to return.
+    proc->state = ZOMBIE;
+    sched();
+
+    panic("zombie exit");
+    return -1;
+}
+
+int thread_join(uint tid) {
+    // TODO: Fix edge cases like joining the same thread
+    acquire(&ptable.lock);
+    struct proc* thread = get_process(tid);
+
+    if (thread == 0) 
+        panic("You are waiting for someone that doesn't exist");
+        
+    if (thread->parent != proc) {
+        panic("You don't have ownership of this thread");
+    }
+
+    while (1) {
+        if (thread->state == ZOMBIE) {
+            // uint sp = thread->tf->sp_usr;
+            free_page(thread->kstack);
+            thread->kstack = 0;
+            thread->usyscall = 0;
+            // TODO: delete the page table entries for this stack
+            // TODO: Free stack
+
+            thread->state = UNUSED;
+            thread->pid = 0;
+            thread->nsyscalls = 0;
+            thread->parent = 0;
+            thread->name[0] = 0;
+            thread->killed = 0;
+            thread->wakeup_tick = 0;
+            release(&ptable.lock);
+            return 0;
+        }
+        
+        if(proc->killed){
+            release(&ptable.lock);
+            return -1;
+        }
+        
+        sleep(proc, &ptable.lock);
+    }
+
+    release(&ptable.lock);
+    return -1;
 }

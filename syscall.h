@@ -45,4 +45,5 @@
 #define SYS_getChannel              41
 #define SYS_sigChan                 42
 #define SYS_sigOneChan              43
-
+#define SYS_interruptoff            44
+#define SYS_interrupton             45

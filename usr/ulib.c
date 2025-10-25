@@ -3,6 +3,26 @@
 #include "fcntl.h"
 #include "user.h"
 #include "usyscall.h"
+#include "arm.h"
+
+static inline int
+xchg(volatile int *addr, int newval)
+{
+    int old;
+    unsigned int tmp;
+
+    do {
+        __asm__ volatile(
+                "ldrex %0, [%2]\n"
+                "strex %1, %3, [%2]\n"
+                : "=&r" (old), "=&r" (tmp)
+                : "r" (addr), "r" (newval)
+                : "cc", "memory"
+                );
+    } while (tmp != 0);
+
+    return old;
+}
 
 char*
 strcpy(char *s, char *t)
@@ -152,44 +172,73 @@ ugetpid(void)
   // return u->pid + 1; // @karan try uncommenting this see how pftable_test will fail at ugetpid
 }
 
-
-
 void initiateLock(struct lock* l) {
-
+    l->isInitiated = 1;
+    l->lockvar = 0;
 }
 
 void acquireLock(struct lock* l) {
-
+    while(xchg(&l->lockvar, 1) != 0) {
+        // printf(1, "trying to acquire lock, val : %d \n", l->lockvar);
+    }
+    printf(1, "acquired lock!");
 }
 
 void releaseLock(struct lock* l) {
-
+    xchg(&l->lockvar, 0); 
+    // printf(1, "\n lock released, val : %d", l -> lockvar);
 }
 
 void initiateCondVar(struct condvar* cv) {
-
+    int chan = getChannel();
+    cv -> var = chan;
+    cv -> isInitiated = 1;
 }
 
 void condWait(struct condvar* cv, struct lock* l) {
+    if (cv -> isInitiated && l -> isInitiated)
+    {
+        printf(1, "Condwait releasing lock");
+        releaseLock(l);
+        printf(1, "Condwait released lock");
+        sleepChan(cv -> var);
 
+        printf(1, "signal caught, reaquiring lock");
+        acquireLock(l);
+    }
 }
 
 void broadcast(struct condvar* cv) {
-
+    if (cv -> isInitiated)
+    {
+        sigChan(cv -> var);
+    }
 }
 
 void signal(struct condvar* cv) {
-
+    if (cv -> isInitiated)
+    {
+        sigOneChan(cv -> var);
+    }
 }
 
 void semInit(struct semaphore* s, int initVal) {
-
+    initiateLock(&s->l);
+    initiateCondVar(&s->cv);
+    s->ctr = initVal;
+    s->isInitiated = 1;
 }
 
 void semUp(struct semaphore* s) {
-
+    acquireLock(&s->l);
+    s->ctr ++;
+    signal(&s->cv);
+    releaseLock(&s->l);
 }
 
 void semDown(struct semaphore* s) {
-    
+    acquireLock(&s->l);
+    s->ctr--;
+    if (s->ctr < 0) condWait(&s->cv, &s->l);
+    releaseLock(&s->l);
 }

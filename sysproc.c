@@ -7,6 +7,15 @@
 #include "proc.h"
 #include "pstat.h"
 #include "barrier.h"
+#include "spinlock.h"
+
+static int available_channel = 1;
+// static struct spinlock CHANNE_LOCKS[NPROC];
+
+extern struct {
+    struct spinlock lock;
+    struct proc proc[NPROC];
+} ptable;
 
 int sys_fork(void)
 {
@@ -242,20 +251,30 @@ int sys_kpgdump(void)
     return 0;
 }
 
-//// New code goes here
 int sys_thread_create(void)
 {
-    return -1;
+    char* tid_ptr;
+    char* function_ptr;
+    char* args;
+
+    if (argptr(0, &tid_ptr, 8) < 0 || argptr(1, &function_ptr, 8) < 0 || argptr(2, &args, 8)) {
+        return -1;
+    }
+
+    return thread_create((int *) tid_ptr, function_ptr, args);
 }
 
 int sys_thread_exit(void)
 {
-    return -1;
+    return thread_exit();
 }
 
 int sys_thread_join(void)
 {
-    return -1;
+    int tid;
+    if (argint(0, &tid) < 0) 
+        return -1;
+    return thread_join(tid);
 }
 
 int sys_barrier_init(void)
@@ -278,20 +297,58 @@ int sys_waitpid(void)
 
 int sys_sleepChan(void)
 {
-    return -1;
+    int chan;
+    if (argint(0, &chan) < 0) return -1;
+    if (chan < 0) return -1;
+
+    // struct spinlock* lock = &CHANNE_LOCKS[chan];
+    acquire(&ptable.lock);
+    sleep((void *)(chan), &ptable.lock); //technically any lock works
+    release(&ptable.lock);
+
+    return 0;
 }
 
 int sys_getChannel(void)
 {
-    return -1;
+    int chan;
+    acquire(&ptable.lock);
+    chan = available_channel++;
+    release(&ptable.lock);
+    return chan;
 }
 
 int sys_sigChan(void)
 {
-    return -1;
+    int chan;
+    if (argint(0, &chan) < 0) return -1;
+
+    if (chan < 0) return 0;
+    wakeup((void *)(chan));
+
+    return 0;
 }
 
 int sys_sigOneChan(void)
 {
-    return -1;
+    int chan;
+    if (argint(0, &chan) < 0) return -1;
+
+    if (chan < 0) return 0;
+    wakeup_one((void *)(chan));
+    return 0;
+}
+
+int sys_interruptoff(void)
+{
+    cli();
+    // pushcli();
+    return 0;
+}
+
+int sys_interrupton(void)
+{
+    sti();
+    // popcli();
+    return 0;
 }

@@ -36,6 +36,9 @@ int settickets(int pid, int n_tickets);
 int pgdump(int print_full);
 int kpgdump(void);
 
+int interruptoff(void);
+int interrupton(void);
+
 int thread_create(uint* thread, void* (*start_routine)(void*), void* arg);
 int thread_join(uint thread);
 int thread_exit();

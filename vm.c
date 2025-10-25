@@ -143,7 +143,7 @@ static pte_t *walkpgdir(pde_t *pgdir, const void *va, int alloc)
 
     // pgdir points to the page directory, get the page direcotry entry (pde)
     pde = &pgdir[PDE_IDX(va)];
-
+    // cprintf("PDE ID: %d\n", PDE_IDX(va));
     // If the entry is a superpage (section), there's no L2 page table.
     // Return 0 because there is no PTE to be found.
     if ((*pde & 0x3) == KPDE_TYPE)
