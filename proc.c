@@ -452,45 +452,22 @@ void scheduler(void)
         sti();
 
         // Loop over process table looking for process to run.
-        // acquire(&ptable.lock);
-        // // lottery sched
-        // int total_tickets_during_lottery = get_total_tickets();
-        // if (total_tickets_during_lottery == 0) goto next;
-
-        // p = hold_lottery(total_tickets_during_lottery);
-        // proc = p;
-        // switchuvm(p);
-        // p->state = RUNNING;
-        // p->runticks += 1; // this process has been scheduled for one more tick
-
-        // swtch(&cpu->scheduler, proc->context);
-        // // Process is done running for now.
-        // // It should have changed its p->state before coming back
-        // proc = 0;
-        // next:
-        // release(&ptable.lock);
-
         acquire(&ptable.lock);
+        // lottery sched
+        int total_tickets_during_lottery = get_total_tickets();
+        if (total_tickets_during_lottery == 0) goto next;
 
-        for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-            if(p->state != RUNNABLE) {
-                continue;
-            }
+        p = hold_lottery(total_tickets_during_lottery);
+        proc = p;
+        switchuvm(p);
+        p->state = RUNNING;
+        p->runticks += 1; // this process has been scheduled for one more tick
 
-            // Switch to chosen process.  It is the process's job
-            // to release ptable.lock and then reacquire it
-            // before jumping back to us.
-            proc = p;
-            switchuvm(p);
-
-            p->state = RUNNING;
-
-            swtch(&cpu->scheduler, proc->context);
-            // Process is done running for now.
-            // It should have changed its p->state before coming back.
-            proc = 0;
-        }
-
+        swtch(&cpu->scheduler, proc->context);
+        // Process is done running for now.
+        // It should have changed its p->state before coming back
+        proc = 0;
+        next:
         release(&ptable.lock);
     }
 }
@@ -910,37 +887,26 @@ int thread_create(int* tid_ptr, char* func_ptr, char* args) {
     *tid_ptr = pid;
 
     // alloc 2 pages for the user stack follow the same method, one is empty to detect stack overflow and the one below that is the stack
-    // int sz = np->sz;
+    int sz = np->sz;
     uint sp;
     // cprintf("Original Size: %d\n", sz);
 
-    // sz = align_up (sz, PTE_SZ);
-    // // cprintf("Alignup Size: %d\n", sz);
+    sz = align_up (sz, PTE_SZ);
+    // cprintf("Alignup Size: %d\n", sz);
 
-    // if ((sz = allocuvm(np->pgdir, sz, sz + 2 * PTE_SZ)) == 0) {
-    //     goto bad;
-    // }
-
-    // clearpteu(np->pgdir, (char*) (sz - 2 * PTE_SZ));
-    // // print_stack((char *)align_up(proc->tf->sp_usr, PTE_SZ));
-    // // print_stack((char *)align_up(np->tf->sp_usr, PTE_SZ));
-    // sp = sz;
-    // // cprintf("Final Size: %d\n", sz);
-
-    // np->sz = sz;
-    // proc->sz = sz;
-
-    uint new_sz = proc->sz + 2 * PTE_SZ;
-    
-    if ((new_sz = allocuvm(proc->pgdir, proc->sz, new_sz)) == 0) {
+    if ((sz = allocuvm(np->pgdir, sz, sz + 2 * PTE_SZ)) == 0) {
         goto bad;
     }
-    
-    clearpteu(proc->pgdir, (char*) (new_sz - 2 * PTE_SZ));
-    sp = new_sz;
-    
-    proc->sz = new_sz;  // Update parent's size
-    np->sz = new_sz;    // Thread shares the same size
+
+    clearpteu(np->pgdir, (char*) (sz - 2 * PTE_SZ));
+    // print_stack((char *)align_up(proc->tf->sp_usr, PTE_SZ));
+    // print_stack((char *)align_up(np->tf->sp_usr, PTE_SZ));
+    sp = sz;
+    // cprintf("Final Size: %d\n", sz);
+
+    np->sz = sz;
+    proc->sz = sz;
+    np->killed = 0;
 
 
     // pgdump1(np->pgdir, 1);

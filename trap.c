@@ -27,8 +27,9 @@ void irq_handler (struct trapframe *r)
         if (proc->killed) {
             if (proc->is_main_thread)
                 exit(0);
-        } else {
-            thread_exit();
+            else {
+                thread_exit();
+            }
         }
     }
 
