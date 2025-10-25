@@ -223,7 +223,6 @@ int growproc(int n)
     acquire(&ptable.lock);
     update_size(proc, sz);
     release(&ptable.lock);
-    // TODO: Update the size of all the threads
     switchuvm(proc);
 
     return 0;
@@ -962,7 +961,6 @@ int thread_exit() { // note that some one should call join to cleanup this guy
 
     acquire(&ptable.lock);
 
-    // TODO: Correct this
     // Parent might be sleeping in wait().
     wakeup1(proc->parent);
 
@@ -981,9 +979,6 @@ int thread_exit() { // note that some one should call join to cleanup this guy
                 wakeup1(initproc);
             }
         } else if (p->parent == proc) {
-            // Thread can't kill right?
-            // or should it kill
-            // TODO: Figure this out for now I have kept it that we will kill all the subthreads also
             p->killed = 1;
 
             if (p->state == SLEEPING) 
@@ -1000,12 +995,14 @@ int thread_exit() { // note that some one should call join to cleanup this guy
 }
 
 int thread_join(uint tid) {
-    // TODO: Fix edge cases like joining the same thread
     acquire(&ptable.lock);
     struct proc* thread = get_process(tid);
 
     if (thread == 0) 
         panic("You are waiting for someone that doesn't exist");
+
+    if (thread->pid == proc->pid)
+        panic("You can't joint to yourself");
 
     while (1) {
         if (thread->state == ZOMBIE) {
@@ -1013,8 +1010,6 @@ int thread_join(uint tid) {
             free_page(thread->kstack);
             thread->kstack = 0;
             thread->usyscall = 0;
-            // TODO: delete the page table entries for this stack
-            // TODO: Free stack
             uint ss = thread->tf->sp_usr;
             ss = align_dn(align_dn(align_up(ss, PTE_SZ) - 1, PTE_SZ) - 1, PTE_SZ);
             deallocuvm(thread->pgdir, ss + 2 * PTE_SZ, ss);

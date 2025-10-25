@@ -373,7 +373,7 @@ int allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
             if (mem == 0 || a >= MAX_PROC_PAGES * PTE_SZ)
             {
                 // just dealloc the last page
-                // cprintf("allocuvm out of memory\n"); // TODO: Fix this
+                // cprintf("allocuvm out of memory\n");
                 evict_page(pgdir); // this will dealloc the page also and make it invalid
                 if (mem != 0)
                     goto next;
