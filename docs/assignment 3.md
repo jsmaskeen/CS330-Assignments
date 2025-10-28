@@ -1,11 +1,3 @@
-# Assignment 3
-
-Authors:
-- Aarsh Wankar
-- Abhinav Khot
-- Jaskirat Singh Maskeen
-- Karan Sagar Gandhi
-
 ## Task 1 : Page Dump and Super pages
 
 ## Implementation of `pdgump` and `kpgdump`
