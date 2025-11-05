@@ -97,7 +97,7 @@ writetest1(void)
     }
     
     // for(i = 0; i < MAXFILE; i++){
-    for(i = 0; i < 151; i++){ // MAXFILE exceeds 1024 blocks !!! we need upper lim to be  > 11+128 to check for doubly indirect blocks.
+    for(i = 0; i < 155; i++){ // MAXFILE exceeds 1024 blocks !!! we need upper lim to be  > 11+128 to check for doubly indirect blocks.
         ((int*)buf)[0] = i;
         if(write(fd, buf, 512) != 512){
             printf(stdout, "error: write big file failed\n", i);
@@ -116,9 +116,10 @@ writetest1(void)
     n = 0;
     for(;;){
         i = read(fd, buf, 512);
+        printf(1,"\n3: %d %d\n",i,((int*)buf)[0]);
         if(i == 0){
             // if(n == MAXFILE - 1){
-            if(n == 151 - 1){
+            if(n == 155 - 1){
                 printf(stdout, "read only %d blocks from big", n);
                 exit(0);
             }

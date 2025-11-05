@@ -407,9 +407,10 @@ static uint bmap (struct inode *ip, uint bn)
 
     bn-=NINDIRECT;
     if(bn < (NINDIRECT * NINDIRECT)){
-        if((addr = ip->addrs[NDIRECT+1]) == 0)
+        if((addr = ip->addrs[NDIRECT+1]) == 0){
             ip->addrs[NDIRECT+1] = addr = balloc(ip->dev);
-        
+        }
+
         bp = bread(ip->dev, addr);
         a = (uint*)bp->data;
 
@@ -532,14 +533,16 @@ int readi (struct inode *ip, char *dst, uint off, uint n)
     if (off + n > ip->size) {
         n = ip->size - off;
     }
+    cprintf("\n1: %d\n",n);
 
     for (tot = 0; tot < n; tot += m, off += m, dst += m) {
+        cprintf("\nbmap: %d \n", bmap(ip, off / BSIZE));
         bp = bread(ip->dev, bmap(ip, off / BSIZE));
         m = min(n - tot, BSIZE - off%BSIZE);
         memmove(dst, bp->data + off % BSIZE, m);
         brelse(bp);
     }
-
+    cprintf("\n2: %d | val: %d\n",n, ((int*)bp->data)[0]);
     return n;
 }
 
@@ -567,13 +570,14 @@ int writei (struct inode *ip, char *src, uint off, uint n)
     }
 
     for (tot = 0; tot < n; tot += m, off += m, src += m) {
+        cprintf("\nwriting bmap: %d \n", bmap(ip, off / BSIZE));
         bp = bread(ip->dev, bmap(ip, off / BSIZE));
         m = min(n - tot, BSIZE - off%BSIZE);
         memmove(bp->data + off % BSIZE, src, m);
         log_write(bp);
         brelse(bp);
     }
-
+    cprintf("\n-1: %d | val: %d\n",n, ((int*)bp->data)[0]);
     if (n > 0 && off > ip->size) {
         ip->size = off;
         iupdate(ip);
