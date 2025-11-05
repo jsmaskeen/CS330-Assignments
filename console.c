@@ -188,6 +188,14 @@ void consoleintr(int (*getc) (void))
         case C('P'):  // Process listing.
             procdump();
             break;
+        
+        case C('Q'):  // Filesystem dump.
+            fsdump_active();
+            break;
+
+        case C('W'):  // Filesystem dump all.
+            fsdump_ondisk();
+            break;
 
         default:
             if (c != 0 && input.e - input.r < INPUT_BUF) {

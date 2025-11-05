@@ -705,3 +705,73 @@ struct inode* nameiparent (char *path, char *name)
 {
     return namex(path, 1, name);
 }
+
+
+void
+fsdump_active(void)
+{
+  struct inode *ip;
+
+  cprintf("--- FSDump: Active Inodes ---\n");
+  acquire(&icache.lock);
+  for(ip = &icache.inode[0]; ip < &icache.inode[NINODE]; ip++){
+    if(ip->ref > 0){ // Only print active/referenced inodes
+      cprintf("inode %d: ref=%d, type=%d, nlink=%d, size=%d, flags=%x\n",
+              ip->inum, ip->ref, ip->type, ip->nlink, ip->size, ip->flags);
+    
+      cprintf("  direct blocks: ");
+      int i;
+      for(i = 0; i < NDIRECT; i++){ 
+        if(ip->addrs[i])
+          cprintf("%d ", ip->addrs[i]);
+      }
+      cprintf("\n");
+
+      if(ip->addrs[NDIRECT]){ // The 13th entry is for NINDIRECT
+        cprintf("  singly-indirect block at: %d\n", ip->addrs[NDIRECT]);
+      }
+      
+    }
+  }
+  release(&icache.lock);
+  cprintf("--- End FSDump ---\n");
+}
+
+void
+fsdump_ondisk(void)
+{
+  struct superblock sb;
+  struct buf *bp;
+  struct dinode *dip;
+  int inum, i;
+
+  cprintf("--- On-Disk FSDump ---\n");
+
+  readsb(ROOTDEV, &sb);
+  cprintf("Superblock: size=%d, nblocks=%d, ninodes=%d, nlog=%d\n",
+          sb.size, sb.nblocks, sb.ninodes, sb.nlog);
+
+  // Iterate and read through all inode blocks
+  for(inum = 1; inum < sb.ninodes; inum++){
+    bp = bread(ROOTDEV, IBLOCK(inum)); //
+
+    dip = (struct dinode*)bp->data + (inum % IPB); //
+
+    // Check if  allocated (type != 0)
+    if(dip->type != 0){
+      cprintf("Inode %d: type=%d, nlink=%d, size=%d\n",
+              inum, dip->type, dip->nlink, dip->size);
+
+      cprintf("  Blocks: ");
+      for(i = 0; i < NDIRECT + 1; i++){
+        if(dip->addrs[i])
+          cprintf("%d (%s), ", dip->addrs[i], (i == NDIRECT) ? "i": "d");
+      }
+      cprintf("\n");
+    }
+
+    brelse(bp);
+  }
+
+  cprintf("--- End On-Disk FSDump ---\n");
+}
