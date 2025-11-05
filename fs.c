@@ -373,6 +373,8 @@ void iunlockput (struct inode *ip)
 static uint bmap (struct inode *ip, uint bn)
 {
     uint addr, *a;
+    uint *a_2, addr_2;
+    struct buf *bp_2;
     struct buf *bp;
 
     if (bn < NDIRECT) {
@@ -403,6 +405,37 @@ static uint bmap (struct inode *ip, uint bn)
         return addr;
     }
 
+    bn-=NINDIRECT;
+    if(bn < (NINDIRECT * NINDIRECT)){
+        if((addr = ip->addrs[NDIRECT+1]) == 0)
+            ip->addrs[NDIRECT+1] = addr = balloc(ip->dev);
+        
+        bp = bread(ip->dev, addr);
+        a = (uint*)bp->data;
+
+        // Load singly-indirect block from the L1 block
+        uint indx = bn / NINDIRECT;
+        if((addr_2 = a[indx]) == 0){
+            a[indx] = addr_2 = balloc(ip->dev);
+            log_write(bp);
+        }
+        
+        brelse(bp);
+
+        bp_2 = bread(ip->dev, addr_2); 
+        a_2 = (uint*)bp_2->data;
+
+        // Load data block from the L2 block
+        uint l2_idx = bn % NINDIRECT;
+        if((addr = a_2[l2_idx]) == 0){
+            a_2[l2_idx] = addr = balloc(ip->dev);
+            log_write(bp_2);
+        }
+
+        brelse(bp_2);
+        return addr;
+    }
+
     panic("bmap: out of range");
 }
 
@@ -415,6 +448,8 @@ static void itrunc (struct inode *ip)
 {
     int i, j;
     struct buf *bp;
+    struct buf *bp_2;
+    uint *a_2;
     uint *a;
 
     for (i = 0; i < NDIRECT; i++) {
@@ -437,6 +472,28 @@ static void itrunc (struct inode *ip)
         brelse(bp);
         bfree(ip->dev, ip->addrs[NDIRECT]);
         ip->addrs[NDIRECT] = 0;
+    }
+
+    if(ip->addrs[NDIRECT+1]){
+        bp = bread(ip->dev, ip->addrs[NDIRECT+1]);
+        a = (uint*)bp->data;
+        
+        for(i = 0; i < NINDIRECT; i++){
+            if(a[i]){
+                bp_2 = bread(ip->dev, a[i]);
+                a_2 = (uint*)bp_2->data;
+                
+                for(j = 0; j < NINDIRECT; j++){ 
+                    if(a_2[j])
+                        bfree(ip->dev, a_2[j]); 
+                }
+                brelse(bp_2);
+                bfree(ip->dev, a[i]); 
+            }
+        }
+        brelse(bp);
+        bfree(ip->dev, ip->addrs[NDIRECT+1]);
+        ip->addrs[NDIRECT+1] = 0;
     }
 
     ip->size = 0;
@@ -727,8 +784,13 @@ fsdump_active(void)
       }
       cprintf("\n");
 
-      if(ip->addrs[NDIRECT]){ // The 13th entry is for NINDIRECT
+      if(ip->addrs[NDIRECT]){ // The 12th entry is for NINDIRECT
         cprintf("  singly-indirect block at: %d\n", ip->addrs[NDIRECT]);
+      }
+      cprintf("\n");
+
+      if(ip->addrs[NDIRECT+1]){ // The 13th entry is for doubly indirect
+        cprintf("  doubly-indirect block at: %d\n", ip->addrs[NDIRECT+1]);
       }
       
     }
@@ -763,9 +825,9 @@ fsdump_ondisk(void)
               inum, dip->type, dip->nlink, dip->size);
 
       cprintf("  Blocks: ");
-      for(i = 0; i < NDIRECT + 1; i++){
+      for(i = 0; i < NDIRECT + 2; i++){
         if(dip->addrs[i])
-          cprintf("%d (%s), ", dip->addrs[i], (i == NDIRECT) ? "i": "d");
+          cprintf("%d (%s), ", dip->addrs[i], (i == NDIRECT+1) ? "di" : ((i == NDIRECT) ? "i": "d"));
       }
       cprintf("\n");
     }
