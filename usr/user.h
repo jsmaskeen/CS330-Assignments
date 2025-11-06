@@ -96,3 +96,5 @@ void broadcast(struct condvar* cv);
 void semInit(struct semaphore* s, int initVal);
 void semUp(struct semaphore* s);
 void semDown(struct semaphore* s);  
+
+int symlink(char* target, char* path);

@@ -38,7 +38,8 @@ UPROGS=\
 	_t_sem2\
 	_t_sleepwake\
 	_t_threads\
-	_t_waitpid
+	_t_waitpid\
+	_symlink_test\
 
 all: $(FS_IMAGE)
 

@@ -283,7 +283,7 @@ static struct inode* create(char *path, short type, short major, short minor)
         iunlockput(dp);
         ilock(ip);
 
-        if(type == T_FILE && ip->type == T_FILE) {
+        if((type == T_FILE && ip->type == T_FILE) || (type == T_SYMLINK && ip->type == T_SYMLINK)) {
             return ip;
         }
 
@@ -327,50 +327,71 @@ int sys_open(void)
     int fd, omode;
     struct file *f;
     struct inode *ip;
-
+    
     if(argstr(0, &path) < 0 || argint(1, &omode) < 0) {
         return -1;
     }
-
+    
     if(omode & O_CREATE){
         begin_trans();
         ip = create(path, T_FILE, 0, 0);
         commit_trans();
-
         if(ip == 0) {
             return -1;
         }
-
     } else {
         if((ip = namei(path)) == 0) {
             return -1;
         }
-
         ilock(ip);
-
+        
+        int cnt = 0;
+        while (cnt < 10 && ip->type == T_SYMLINK) {
+            char buf[512];
+            if(readi(ip, buf, 0, ip->size) != ip->size) {
+                iunlockput(ip);
+                return -1;
+            }
+            buf[ip->size] = '\0';
+            
+            struct inode *next = namei(buf);
+            iunlockput(ip);
+            
+            if(next == 0) {
+                return -1;
+            }
+            
+            ip = next;
+            ilock(ip);
+            cnt++;
+        }
+        
+        if(cnt == 10) { //we prolly have an inf loop of symlinks :( Just exit!
+            iunlockput(ip);
+            return -1;
+        }
+        
         if(ip->type == T_DIR && omode != O_RDONLY){
             iunlockput(ip);
             return -1;
         }
     }
-
+    
     if((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0){
         if(f) {
             fileclose(f);
         }
-
         iunlockput(ip);
         return -1;
     }
-
+    
     iunlock(ip);
-
     f->type = FD_INODE;
     f->ip = ip;
     f->off = 0;
     f->readable = !(omode & O_WRONLY);
     f->writable = (omode & O_WRONLY) || (omode & O_RDWR);
-
+    
     return fd;
 }
 
@@ -503,5 +524,34 @@ int sys_pipe(void)
     fd[0] = fd0;
     fd[1] = fd1;
 
+    return 0;
+}
+
+int sys_symlink(void)
+{
+    char *target, *path;
+    struct inode *ip;
+    
+    if(argstr(0, &target) < 0 || argstr(1, &path) < 0)
+        return -1;
+    
+    begin_trans();
+    
+    // create a symlink type inode
+    if((ip = create(path, T_SYMLINK, 0, 0)) == 0) {
+        commit_trans();
+        return -1;
+    }
+    
+    // we put the real path in the data blocks of the symlink inode
+    if(writei(ip, target, 0, strlen(target)) != strlen(target)) {
+        iunlockput(ip);
+        commit_trans();
+        return -1;
+    }
+    
+    iunlockput(ip);
+    commit_trans();
+    
     return 0;
 }

@@ -140,6 +140,7 @@ extern int sys_sigChan(void);
 extern int sys_sigOneChan(void);
 extern int sys_interruptoff(void);
 extern int sys_interrupton(void);
+extern int sys_symlink(void);
 ///////////// End of new addition /////////////
 extern int sys_get_inuse_blocks(void);
 
@@ -193,7 +194,8 @@ static int (*syscalls[])(void) = {
         [SYS_interruptoff]      sys_interruptoff,
         [SYS_interrupton]       sys_interrupton,
 /////////// End of final parts of threads lab/////////  
-        [SYS_get_inuse_blocks]  sys_get_inuse_blocks
+        [SYS_get_inuse_blocks]  sys_get_inuse_blocks,
+        [SYS_symlink]           sys_symlink
 };
 
 void syscall(void)
