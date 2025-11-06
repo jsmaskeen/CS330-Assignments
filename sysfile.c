@@ -352,7 +352,6 @@ int sys_open(void)
                 iunlockput(ip);
                 return -1;
             }
-            buf[ip->size] = '\0';
             
             struct inode *next = namei(buf);
             iunlockput(ip);
@@ -544,7 +543,7 @@ int sys_symlink(void)
     }
     
     // we put the real path in the data blocks of the symlink inode
-    if(writei(ip, target, 0, strlen(target)) != strlen(target)) {
+    if(writei(ip, target, 0, strlen(target) + 1) != strlen(target) + 1) {
         iunlockput(ip);
         commit_trans();
         return -1;

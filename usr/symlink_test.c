@@ -21,7 +21,7 @@ main(int argc, char *argv[])
     char *msg = "Sayonara, -child killers\n";
     int len = strlen(msg);
 
-    if(write(fd, msg, len) != len){
+    if(write(fd, msg, len + 1) != len + 1){
         printf(1, "write failed\n");
         close(fd);
         exit(0);
@@ -35,17 +35,15 @@ main(int argc, char *argv[])
     }
 
     char buf[128];
-    int n = read(fd, buf, sizeof(buf)-1);
+    int n = read(fd, buf, sizeof(buf));
     if(n < 0){
         printf(1, "read failed\n");
         close(fd);
         exit(0);
     }
-    buf[n] = '\0';
 
     printf(1, "Read %d bytes directly using the path: %s", n, buf);
     close(fd);
-
 
     // we use the symlink now
 
@@ -57,13 +55,12 @@ main(int argc, char *argv[])
         exit(0);
     }
 
-    n = read(fd, buf, sizeof(buf)-1);
+    n = read(fd, buf, sizeof(buf));
     if(n < 0){
         printf(1, "read failed\n");
         close(fd);
         exit(0);
     }
-    buf[n] = '\0';
 
     printf(1, "Read %d bytes using symlink: %s", n, buf);
     close(fd);
