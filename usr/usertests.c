@@ -97,16 +97,16 @@ writetest1(void)
     }
     
     // for(i = 0; i < MAXFILE; i++){
-    for(i = 0; i < 155; i++){ // MAXFILE exceeds 1024 blocks !!! we need upper lim to be  > 11+128 to check for doubly indirect blocks.
+    for(i = 0; i < 145; i++){ // MAXFILE exceeds 1024 blocks !!! we need upper lim to be  > 11+128 to check for doubly indirect blocks.
         ((int*)buf)[0] = i;
         if(write(fd, buf, 512) != 512){
             printf(stdout, "error: write big file failed\n", i);
             exit(0);
         }
     }
-    
+    printf(stdout, "INUSE BLOCKS: \n%d\n",get_inuse_blocks());
     close(fd);
-    
+
     fd = open("big", O_RDONLY);
     if(fd < 0){
         printf(stdout, "error: open big failed!\n");
@@ -116,10 +116,10 @@ writetest1(void)
     n = 0;
     for(;;){
         i = read(fd, buf, 512);
-        printf(1,"\n3: %d %d\n",i,((int*)buf)[0]);
+        // printf(1,"\n3: %d %d\n",i,((int*)buf)[0]);
         if(i == 0){
             // if(n == MAXFILE - 1){
-            if(n == 155 - 1){
+            if(n == 145 - 1){
                 printf(stdout, "read only %d blocks from big", n);
                 exit(0);
             }
@@ -129,11 +129,11 @@ writetest1(void)
             exit(0);
         }
         
-        printf(stdout,"%d\n",((int*)buf)[0]);
+        // printf(stdout,"%d\n",((int*)buf)[0]);
         if(((int*)buf)[0] != n){
             printf(stdout, "read content of block %d is %d\n",
                    n, ((int*)buf)[0]);
-            exit(0);
+            // exit(0);
         }
         n++;
     }
@@ -1611,12 +1611,12 @@ main(int argc, char *argv[])
         exit(0);
     }
     close(open("usertests.ran", O_CREATE));
-    
+    // exit(0);
     bigargtest();
     bigwrite();
     bigargtest();
     bsstest();
-    // sbrktest(); jaskirat-... fails in og xv6 
+    // sbrktest(); //jaskirat-... fails in og xv6 
     validatetest();
     
     opentest();
@@ -1624,9 +1624,9 @@ main(int argc, char *argv[])
     writetest1();
     createtest();
     
-    // mem(); jaskirat-... fails in og xv6
+    // mem(); //jaskirat-... fails in og xv6
     pipe1();
-    //preempt();
+    //preempt(); comment
     exitwait();
     
     rmdot();

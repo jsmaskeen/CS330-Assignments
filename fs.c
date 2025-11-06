@@ -360,6 +360,29 @@ void iunlockput (struct inode *ip)
     iput(ip);
 }
 
+int get_inuse_blocks(void)
+{
+  struct superblock sb;
+  struct buf *bp;
+  int c = 0;
+  int b, bi, m;
+
+  readsb(ROOTDEV, &sb);
+
+  for (b = 0; b < sb.size; b += BPB) {
+    bp = bread(ROOTDEV, BBLOCK(b, sb.ninodes));
+
+    for (bi = 0; bi < BPB && (b + bi) < sb.size; bi++) {
+      m = 1 << (bi % 8);
+      if ((bp->data[bi / 8] & m) != 0) {
+        c++;
+      }
+    }
+    brelse(bp);
+  }
+  return c;
+}
+
 //PAGEBREAK!
 // Inode content
 //
@@ -533,16 +556,16 @@ int readi (struct inode *ip, char *dst, uint off, uint n)
     if (off + n > ip->size) {
         n = ip->size - off;
     }
-    cprintf("\n1: %d\n",n);
+    // cprintf("\n1: %d\n",n);
 
     for (tot = 0; tot < n; tot += m, off += m, dst += m) {
-        cprintf("\nbmap: %d \n", bmap(ip, off / BSIZE));
+        // cprintf("\nbmap: %d \n", bmap(ip, off / BSIZE));
         bp = bread(ip->dev, bmap(ip, off / BSIZE));
         m = min(n - tot, BSIZE - off%BSIZE);
         memmove(dst, bp->data + off % BSIZE, m);
         brelse(bp);
     }
-    cprintf("\n2: %d | val: %d\n",n, ((int*)bp->data)[0]);
+    // cprintf("\n2: %d | val: %d\n",n, ((int*)bp->data)[0]);
     return n;
 }
 
@@ -570,14 +593,14 @@ int writei (struct inode *ip, char *src, uint off, uint n)
     }
 
     for (tot = 0; tot < n; tot += m, off += m, src += m) {
-        cprintf("\nwriting bmap: %d \n", bmap(ip, off / BSIZE));
+        // cprintf("\nwriting bmap: %d \n", bmap(ip, off / BSIZE));
         bp = bread(ip->dev, bmap(ip, off / BSIZE));
         m = min(n - tot, BSIZE - off%BSIZE);
         memmove(bp->data + off % BSIZE, src, m);
         log_write(bp);
         brelse(bp);
     }
-    cprintf("\n-1: %d | val: %d\n",n, ((int*)bp->data)[0]);
+    // cprintf("\n-1: %d | val: %d\n",n, ((int*)bp->data)[0]);
     if (n > 0 && off > ip->size) {
         ip->size = off;
         iupdate(ip);

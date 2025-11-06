@@ -47,3 +47,4 @@
 #define SYS_sigOneChan              43
 #define SYS_interruptoff            44
 #define SYS_interrupton             45
+#define SYS_get_inuse_blocks        46

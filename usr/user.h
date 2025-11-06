@@ -38,6 +38,7 @@ int kpgdump(void);
 
 int interruptoff(void);
 int interrupton(void);
+int get_inuse_blocks(void);
 
 int thread_create(uint* thread, void* (*start_routine)(void*), void* arg);
 int thread_join(uint thread);

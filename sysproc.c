@@ -8,6 +8,7 @@
 #include "pstat.h"
 #include "barrier.h"
 #include "spinlock.h"
+#include "fs.h"
 
 static int available_channel = 1;
 
@@ -350,4 +351,8 @@ int sys_interrupton(void)
     sti();
     // popcli();
     return 0;
+}
+
+int sys_get_inuse_blocks(void){
+    return get_inuse_blocks();
 }
