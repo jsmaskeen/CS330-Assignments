@@ -26,6 +26,9 @@ UPROGS=\
 	_pause\
 	_ps\
 	_dispstat\
+	_symlink_test\
+	_bigfile_t\
+	_blocks_in_use\
 	_prop_test\
 	_boost_test\
 	_pgtable_test\
@@ -39,7 +42,6 @@ UPROGS=\
 	_t_sleepwake\
 	_t_threads\
 	_t_waitpid\
-	_symlink_test\
 
 all: $(FS_IMAGE)
 

@@ -133,7 +133,7 @@ writetest1(void)
         if(((int*)buf)[0] != n){
             printf(stdout, "read content of block %d is %d\n",
                    n, ((int*)buf)[0]);
-            // exit(0);
+            exit(0);
         }
         n++;
     }
