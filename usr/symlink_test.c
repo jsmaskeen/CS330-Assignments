@@ -65,5 +65,27 @@ main(int argc, char *argv[])
     printf(1, "Read %d bytes using symlink: %s", n, buf);
     close(fd);
 
+    // Nested symlinks
+    symlink("abc", "def");
+    symlink("def", "ghi");
+
+    fd = open("ghi", 0);
+
+    if(fd < 0){
+        printf(1, "open for read failed\n");
+        exit(0);
+    }
+
+    n = read(fd, buf, sizeof(buf));
+    if(n < 0){
+        printf(1, "read failed\n");
+        close(fd);
+        exit(0);
+    }
+
+    printf(1, "Read %d bytes using nested symlink: %s", n, buf);
+    close(fd);
+
+
     exit(0);
 }

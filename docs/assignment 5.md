@@ -100,5 +100,34 @@ Running our `bigfile_t`:
 
 With this change, the `bigfile_t` can now easily write 400+ blocks, proving our `bmap` implementation works for large files.
 
-## Task 2:
-@aarsh @abhinav
+## Task 2: Adding symbolic links to xv6
+Symbolic links (or symlinks / soft links) refer to a linked file or directory by pathname; when a symbolic link is opened, the kernel looks up the linked-to name. Symbolic links resemble hard links, but hard links are restricted to pointing to files on the same disk, cannot refer to directories, and are tied to a specific target i-node rather than (as with symbolic links) referring to whatever happens at the moment to be at the target name, if anything.
+
+
+### Implementation:
+We implement the `symlink(char *target, char *path)` system call, which creates a new symbolic link at `path` that refers to file named by `target`.
+
+The main steps are:
+1. **Define a new file type for symlinks**:
+   In `stat.h`, we define a new file type `T_SYMLINK` to represent symbolic links. This way, we can differentiate symlinks from regular files and directories. Note that files, directories, and symlinks all share the same inode structure. Each inode contains pointers to data blocks, which store the actual content of the file, directory entries, or symlink target path.
+2. **Implement the `symlink` system call**:
+    In `sysfile.c`, we implement the `sys_symlink` function. This function takes two arguments: the target path and the symlink path. It performs the following steps:
+    - Validates the input paths.
+    - Allocates a new inode for the symlink using `ialloc()`.
+    - Sets the inode type to `T_SYMLINK`.
+    - Writes the target path into the data block(s) of the symlink inode.
+    - Creates a directory entry for the symlink in the parent directory of `path`.
+3. **Modify the `open` system call to handle symlinks**:
+    In `sysfile.c`, we modify the `sys_open` function to check if the file being opened is a symlink. If it is, we read the target path from the symlink's data block with a while loop to handle nested symlinks. We then attempt to open the target file instead.
+### Testing:
+We create a new user program `symlink_test.c` to test our symlink implementation. This program performs the following steps:
+
+1. Creates a regular file and writes some data to it.
+2. Creates a symlink to the regular file using the `symlink` system call.
+3. Opens the symlink and reads the data, verifying that it matches the original file's content.
+4. Tests nested symlinks by creating a symlink to another symlink and verifying that it resolves correctly.
+
+Here is the output of the `symlink_test` program:
+![alt text](media/symlink_test.png)
+
+This output shows that the symlink was created successfully, and the data read through the symlink matches the original file's content. The nested symlink also resolves correctly, demonstrating that our implementation works as intended.
