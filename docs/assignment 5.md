@@ -131,3 +131,5 @@ Here is the output of the `symlink_test` program:
 ![alt text](media/symlink_test.png)
 
 This output shows that the symlink was created successfully, and the data read through the symlink matches the original file's content. The nested symlink also resolves correctly, demonstrating that our implementation works as intended.
+
+In the end we added a final test file which tests creating both a symlink and a bigfile. This is `bigfile_symlink_t.c` which creates a bigfile using doubly indirect blocks and then creates a symlink to it and reads back the data to verify correctness.
