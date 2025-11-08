@@ -86,6 +86,10 @@ main(int argc, char *argv[])
     printf(1, "Read %d bytes using nested symlink: %s", n, buf);
     close(fd);
 
+    unlink("ghi");
+    unlink("def");
+    unlink("abc");
+    unlink("myfile");
 
     exit(0);
 }

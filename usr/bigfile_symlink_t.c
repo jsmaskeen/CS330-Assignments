@@ -38,6 +38,7 @@ int main(int argc, char *argv[])
         ((int *)buf)[0] = i;
         if (write(fd, buf, 512) != 512)
         {
+            unlink("big");
             printf(1, "error: write big file failed\n", i);
             exit(0);
         }
@@ -52,6 +53,8 @@ int main(int argc, char *argv[])
     fd = open(linkfile, O_RDONLY);
     if (fd < 0)
     {
+        unlink("linkfile");
+        unlink("big");
         printf(1, "error: open big failed!\n");
         exit(0);
     }
@@ -66,6 +69,8 @@ int main(int argc, char *argv[])
             // if(n == MAXFILE - 1){
             if (n == numblocks - 1)
             {
+                unlink("linkfile");
+                unlink("big");
                 printf(1, "read only %d blocks from big", n);
                 exit(0);
             }
@@ -73,6 +78,8 @@ int main(int argc, char *argv[])
         }
         else if (i != 512)
         {
+            unlink("linkfile");
+            unlink("big");
             printf(1, "read failed %d\n", i);
             exit(0);
         }
@@ -80,6 +87,8 @@ int main(int argc, char *argv[])
         // printf(1,"%d\n",((int*)buf)[0]);
         if (((int *)buf)[0] != n)
         {
+            unlink("linkfile");
+            unlink("big");
             printf(1, "Error: read content of block %d is %d\n",
                    n, ((int *)buf)[0]);
             exit(0);
