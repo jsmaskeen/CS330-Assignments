@@ -10,6 +10,8 @@
 - [Assignment 1](../../tree/assignment-1)
 - [Assignment 2](../../tree/assignment-2)
 - [Assignment 3](../../tree/assignment-3)
+- [Assignment 4](../../tree/assignment-4)
+- [Assignment 5](../../tree/assignment-5)
 
 ### Documentation:
 View the well formatted documentation at [https://jsmaskeen.github.io/CS330-Assignments/](https://jsmaskeen.github.io/CS330-Assignments/)
